@@ -1,0 +1,204 @@
+import { useState, useEffect } from 'react';
+import { 
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
+import { PipelineFilters } from '@/services/pipelineService';
+
+interface PipelineFiltersProps {
+  filters: PipelineFilters;
+  onFiltersChange: (filters: Partial<PipelineFilters>) => void;
+  availableTags?: string[];
+  loading?: boolean;
+}
+
+export default function PipelineFiltersComponent({
+  filters,
+  onFiltersChange,
+  availableTags = [],
+  loading = false,
+}: PipelineFiltersProps) {
+  const [search, setSearch] = useState(filters.search || '');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Debounce search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (search !== filters.search) {
+        onFiltersChange({ search: search || undefined });
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [search, filters.search, onFiltersChange]);
+
+  const handleStatusChange = (status: string) => {
+    onFiltersChange({ 
+      status: status === 'all' ? undefined : status as 'active' | 'inactive'
+    });
+  };
+
+  const handleTagToggle = (tag: string) => {
+    const currentTags = filters.tags || [];
+    const newTags = currentTags.includes(tag)
+      ? currentTags.filter(t => t !== tag)
+      : [...currentTags, tag];
+    
+    onFiltersChange({ 
+      tags: newTags.length > 0 ? newTags : undefined 
+    });
+  };
+
+  const clearFilters = () => {
+    setSearch('');
+    onFiltersChange({
+      search: undefined,
+      status: undefined,
+      tags: undefined,
+    });
+  };
+
+  const hasActiveFilters = !!(
+    filters.search || 
+    filters.status || 
+    (filters.tags && filters.tags.length > 0)
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Main search and status filter */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Search */}
+        <div className="flex-1">
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search pipelines..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              disabled={loading}
+              className="input pl-10 disabled:opacity-50"
+            />
+          </div>
+        </div>
+        
+        {/* Status filter */}
+        <div className="flex gap-2">
+          <select 
+            value={filters.status || 'all'}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            disabled={loading}
+            className="input w-auto disabled:opacity-50"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          
+          {/* Advanced filters toggle */}
+          <button
+            type="button"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            disabled={loading}
+            className="btn-secondary inline-flex items-center gap-x-1.5 disabled:opacity-50"
+          >
+            <FunnelIcon className="-ml-0.5 h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+            Filters
+            {hasActiveFilters && (
+              <span className="ml-1 inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
+                {[
+                  filters.search && 'search',
+                  filters.status && 'status',
+                  filters.tags?.length && `${filters.tags.length} tags`
+                ].filter(Boolean).length}
+              </span>
+            )}
+          </button>
+
+          {/* Clear filters */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              disabled={loading}
+              className="btn-secondary inline-flex items-center gap-x-1.5 disabled:opacity-50"
+            >
+              <XMarkIcon className="-ml-0.5 h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Advanced filters */}
+      {showAdvancedFilters && (
+        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg space-y-4">
+          {/* Tags filter */}
+          {availableTags.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-2">
+                Tags
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {availableTags.map((tag) => {
+                  const isSelected = filters.tags?.includes(tag) || false;
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleTagToggle(tag)}
+                      disabled={loading}
+                      className={`inline-flex items-center rounded-md px-3 py-1 text-sm font-medium transition-colors ${
+                        isSelected
+                          ? 'badge-blue ring-1 ring-blue-600/20 dark:ring-blue-400/30'
+                          : 'bg-white dark:bg-gray-600 text-secondary ring-1 ring-gray-300 dark:ring-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500'
+                      } disabled:opacity-50`}
+                    >
+                      {tag}
+                      {isSelected && (
+                        <XMarkIcon className="ml-1 h-3 w-3" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Active filters summary */}
+          {hasActiveFilters && (
+            <div className="border-t border-card pt-4">
+              <div className="text-sm text-muted">
+                <span className="font-medium">Active filters:</span>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {filters.search && (
+                    <span className="badge-blue inline-flex items-center rounded-md px-2 py-1 text-xs font-medium">
+                      Search: "{filters.search}"
+                    </span>
+                  )}
+                  {filters.status && (
+                    <span className="badge-green inline-flex items-center rounded-md px-2 py-1 text-xs font-medium">
+                      Status: {filters.status}
+                    </span>
+                  )}
+                  {filters.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center rounded-md bg-purple-50 dark:bg-purple-900 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-200"
+                    >
+                      Tag: {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
