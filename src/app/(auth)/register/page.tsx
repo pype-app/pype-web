@@ -221,12 +221,12 @@ export default function RegisterPage() {
                   placeholder="your-company"
                 />
                 <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                  .pype.ia.br
+                  .pype.app.br
                 </span>
               </div>
               {watchSubdomain && (
                 <p className="mt-1 text-sm text-gray-500">
-                  Your Pype URL will be: https://{watchSubdomain}.pype.ia.br
+                  Your Pype URL will be: https://{watchSubdomain}.pype.app.br
                 </p>
               )}
               {errors.tenantSubdomain && (

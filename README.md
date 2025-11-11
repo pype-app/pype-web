@@ -1,6 +1,6 @@
 # Pype UI - Frontend Application
 
-Frontend moderno em Next.js 14 para o Pype (pype.ia.br), um orquestrador de pipelines multi-tenant.
+Frontend moderno em Next.js 14 para o Pype (pype.app.br), um orquestrador de pipelines multi-tenant.
 
 ## 🚀 Tecnologias
 

@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Pype - Pipeline Orchestrator',
-  description: 'Multi-tenant pipeline orchestration platform - pype.ia.br',
+  description: 'Multi-tenant pipeline orchestration platform - pype.app.br',
 };
 
 export default function RootLayout({
