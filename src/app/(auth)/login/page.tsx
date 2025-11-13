@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,8 +21,16 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, isLoading, error, clearError } = useAuthStore();
   const [showTenantField, setShowTenantField] = useState(false);
+
+  useEffect(() => {
+    const message = searchParams?.get('message');
+    if (message === 'password-reset') {
+      toast.success('Password reset successfully! You can now log in with your new password.');
+    }
+  }, [searchParams]);
 
   const {
     register,

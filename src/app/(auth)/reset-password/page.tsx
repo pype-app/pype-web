@@ -1,71 +1,83 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import apiClient from '@/lib/api-client';
-import { ForgotPasswordRequest } from '@/types';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+const resetPasswordSchema = z.object({
+  newPassword: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Please confirm your password'),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
-export default function ForgotPasswordPage() {
+export default function ResetPasswordPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    getValues,
-  } = useForm<ForgotPasswordFormData>({
-    resolver: zodResolver(forgotPasswordSchema),
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
   });
 
-  const onSubmit = async (data: ForgotPasswordFormData) => {
+  useEffect(() => {
+    const urlToken = searchParams?.get('token');
+    if (urlToken) {
+      setToken(urlToken);
+      setTokenValid(true);
+    } else {
+      setTokenValid(false);
+    }
+  }, [searchParams]);
+
+  const onSubmit = async (data: ResetPasswordFormData) => {
+    if (!token) {
+      toast.error('Token not found');
+      return;
+    }
+
     try {
       setIsLoading(true);
       
-      const request: ForgotPasswordRequest = {
-        email: data.email,
-      };
-
-      await apiClient.post('/api/auth/forgot-password', request);
+      await apiClient.post('/api/auth/reset-password', {
+        token: token,
+        newPassword: data.newPassword,
+      });
       
-      setEmailSent(true);
-      toast.success('Password reset email sent!');
+      toast.success('Password reset successfully!');
+      router.push('/login?message=password-reset');
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || 'Failed to send reset email';
+      const errorMessage = error.response?.data?.error || 'Failed to reset password';
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const resendEmail = async () => {
-    const email = getValues('email');
-    if (!email) return;
+  if (tokenValid === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
-    try {
-      setIsLoading(true);
-      await apiClient.post('/api/auth/forgot-password', { email });
-      toast.success('Password reset email sent again!');
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error || 'Failed to resend email';
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (emailSent) {
+  if (tokenValid === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
@@ -75,9 +87,9 @@ export default function ForgotPasswordPage() {
           </div>
 
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900">
               <svg
-                className="h-8 w-8 text-green-600 dark:text-green-400"
+                className="h-8 w-8 text-red-600 dark:text-red-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -86,34 +98,29 @@ export default function ForgotPasswordPage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
                 />
               </svg>
             </div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-gray-100">
-              Check your email
+              Invalid or expired link
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-              We've sent a password reset link to {getValues('email')}
+              The password reset link is invalid or has expired.
             </p>
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-md bg-blue-50 dark:bg-blue-900 p-4">
-              <div className="text-sm text-blue-700 dark:text-blue-300">
-                <p>Didn't receive the email? Check your spam folder or try resending.</p>
+            <div className="rounded-md bg-yellow-50 dark:bg-yellow-900 p-4">
+              <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                <p>Please request a new password reset link if you still need to reset your password.</p>
               </div>
             </div>
 
             <div className="flex flex-col space-y-3">
-              <button
-                type="button"
-                onClick={resendEmail}
-                disabled={isLoading}
-                className="btn-primary w-full"
-              >
-                {isLoading ? 'Sending...' : 'Resend email'}
-              </button>
+              <Link href="/forgot-password" className="btn-primary w-full text-center">
+                Request new reset link
+              </Link>
 
               <Link href="/login" className="btn-secondary w-full text-center">
                 Back to login
@@ -142,28 +149,46 @@ export default function ForgotPasswordPage() {
             />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-gray-100">
-            Forgot your password?
+            Reset your password
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Enter your email address and we'll send you a reset link.
+            Enter your new password below.
           </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email address
-            </label>
-            <input
-              {...register('email')}
-              type="email"
-              autoComplete="email"
-              className="input mt-1"
-              placeholder="Enter your email"
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-            )}
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                New Password
+              </label>
+              <input
+                {...register('newPassword')}
+                type="password"
+                autoComplete="new-password"
+                className="input mt-1"
+                placeholder="Enter your new password"
+              />
+              {errors.newPassword && (
+                <p className="mt-1 text-sm text-red-600">{errors.newPassword.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Confirm New Password
+              </label>
+              <input
+                {...register('confirmPassword')}
+                type="password"
+                autoComplete="new-password"
+                className="input mt-1"
+                placeholder="Confirm your new password"
+              />
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -194,10 +219,10 @@ export default function ForgotPasswordPage() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Sending reset email...
+                  Resetting password...
                 </>
               ) : (
-                'Send reset email'
+                'Reset password'
               )}
             </button>
 
