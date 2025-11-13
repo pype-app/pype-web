@@ -22,7 +22,7 @@ const registerSchema = z.object({
     .string()
     .min(3, 'Subdomain must be at least 3 characters')
     .regex(/^[a-z0-9-]+$/, 'Subdomain can only contain lowercase letters, numbers, and hyphens'),
-  plan: z.string().transform((val) => Number(val)).pipe(z.nativeEnum(TenantPlan)),
+  plan: z.union([z.string(), z.number()]).transform((val) => Number(val)).pipe(z.nativeEnum(TenantPlan)),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -43,8 +43,8 @@ export default function RegisterPage() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      plan: TenantPlan.Free,
-    },
+      plan: TenantPlan.Free.toString(),
+    } as any,
   });
 
   const watchSubdomain = watch('tenantSubdomain');
