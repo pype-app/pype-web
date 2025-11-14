@@ -29,6 +29,13 @@ export default function LoginPage() {
     const message = searchParams?.get('message');
     if (message === 'password-reset') {
       toast.success('Password reset successfully! You can now log in with your new password.');
+    } else if (message === 'check-email') {
+      toast('Please check your email to confirm your account before logging in.', {
+        icon: '📧',
+        duration: 6000,
+      });
+    } else if (message === 'email-confirmed') {
+      toast.success('Email confirmed successfully! You can now log in.');
     }
   }, [searchParams]);
 

@@ -16,7 +16,7 @@ interface AuthState {
 
 interface AuthActions {
   login: (credentials: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<AuthResponse>;
   logout: () => void;
   setTokens: (accessToken: string, refreshToken: string, expiresAt: string) => void;
   setUser: (user: User) => void;
@@ -78,7 +78,7 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      register: async (data: RegisterRequest) => {
+      register: async (data: RegisterRequest): Promise<AuthResponse> => {
         try {
           set({ isLoading: true, error: null });
 
@@ -99,6 +99,8 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
             error: null,
           });
+
+          return response;
         } catch (error: any) {
           const errorMessage = error.response?.data?.error || 'Registration failed';
           set({
