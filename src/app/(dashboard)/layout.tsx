@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import Sidebar from '@/components/layout/Sidebar';
@@ -14,6 +14,7 @@ export default function DashboardLayout({
 }) {
   const { user, isLoading, checkAuth } = useAuthStore();
   const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -39,9 +40,9 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar />
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="lg:pl-72">
-        <Header />
+        <Header setSidebarOpen={setSidebarOpen} />
         <main className="py-10">
           <div className="px-4 sm:px-6 lg:px-8">
             {children}
