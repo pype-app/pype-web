@@ -19,7 +19,7 @@ export default function ConfirmEmailPage() {
       
       if (!token) {
         setStatus('error');
-        setMessage('Token de confirmação não encontrado.');
+        setMessage('Confirmation token not found.');
         return;
       }
 
@@ -27,8 +27,8 @@ export default function ConfirmEmailPage() {
         const response = await apiClient.get(`/api/auth/confirm-email?token=${encodeURIComponent(token)}`);
         
         setStatus('success');
-        setMessage('Email confirmado com sucesso! Você pode fazer login agora.');
-        toast.success('Email confirmado com sucesso!');
+        setMessage('Email confirmed successfully! You can now log in.');
+        toast.success('Email confirmed successfully!');
         
         // Redirecionar para login após 3 segundos
         setTimeout(() => {
@@ -36,7 +36,7 @@ export default function ConfirmEmailPage() {
         }, 3000);
       } catch (error: any) {
         setStatus('error');
-        const errorMessage = error.response?.data?.error || 'Erro ao confirmar email. Token pode estar expirado.';
+        const errorMessage = error.response?.data?.error || 'Error confirming email. Token may be expired.';
         setMessage(errorMessage);
         toast.error(errorMessage);
       }
@@ -90,7 +90,7 @@ export default function ConfirmEmailPage() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                <span className="text-gray-600 dark:text-gray-400">Confirmando seu email...</span>
+                <span className="text-gray-600 dark:text-gray-400">Confirming your email...</span>
               </div>
             </div>
           )}
