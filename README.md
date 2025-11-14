@@ -99,6 +99,49 @@ Crie um arquivo `.env.local`:
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
+## 📧 Configuração de Email (Backend)
+
+O frontend se integra com o sistema de email do backend para funcionalidades como recuperação de senha. Para configurar o email corretamente:
+
+### 1. Configure o Backend
+
+No arquivo `appsettings.json` do projeto `pype-admin`, adicione:
+
+```json
+{
+  "Email": {
+    "SmtpHost": "smtp.gmail.com",
+    "SmtpPort": "587",
+    "Username": "seu-email@gmail.com",
+    "Password": "sua-senha-de-aplicativo",
+    "FromEmail": "noreply@pype.ia.br",
+    "FromName": "Pype",
+    "BaseUrl": "https://web.pype.app.br"
+  }
+}
+```
+
+### 2. URLs de Reset de Senha
+
+O sistema de recuperação de senha funciona da seguinte forma:
+
+1. **Usuário acessa**: `/forgot-password`
+2. **Backend envia email** com link: `https://web.pype.app.br/reset-password?token=abc123`
+3. **Usuário acessa link** e define nova senha
+4. **Redirecionamento** para `/login` com mensagem de sucesso
+
+### 3. Configuração de Produção
+
+Para produção, certifique-se de que:
+
+- `BaseUrl` no backend aponta para seu domínio frontend
+- Links nos emails redirecionam corretamente
+- HTTPS está habilitado para segurança dos tokens
+
+### 4. Desenvolvimento Local
+
+Em desenvolvimento, o backend simula o envio de emails e exibe o conteúdo no console, permitindo copiar os links de reset manualmente.
+
 ## 🎨 Estilização
 
 ### Tailwind CSS
