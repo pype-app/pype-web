@@ -64,9 +64,17 @@ export default function RegisterPage() {
         plan: data.plan,
       };
 
-      await registerUser(registerData);
-      toast.success('Account created successfully!');
-      router.push('/dashboard');
+      const result = await registerUser(registerData);
+      
+      // Se a resposta indicar que precisa confirmar email
+      if (result && !result.user?.emailConfirmed) {
+        toast.success('Account created! Please check your email to confirm your account.');
+        router.push('/login?message=check-email');
+      } else {
+        // Login automático após registro
+        toast.success('Account created successfully!');
+        router.push('/dashboard');
+      }
     } catch (error) {
       toast.error('Registration failed. Please try again.');
     }
@@ -112,7 +120,7 @@ export default function RegisterPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   First Name
                 </label>
                 <input
@@ -128,7 +136,7 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Last Name
                 </label>
                 <input
@@ -145,7 +153,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email address
               </label>
               <input
@@ -162,7 +170,7 @@ export default function RegisterPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Password
                 </label>
                 <input
@@ -178,7 +186,7 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Confirm Password
                 </label>
                 <input
@@ -195,7 +203,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="tenantName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="tenantName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Organization Name
               </label>
               <input
@@ -210,7 +218,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="tenantSubdomain" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="tenantSubdomain" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Subdomain
               </label>
               <div className="mt-1 flex rounded-md shadow-sm">
@@ -220,12 +228,12 @@ export default function RegisterPage() {
                   className="input rounded-r-none"
                   placeholder="your-company"
                 />
-                <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
                   .pype.app.br
                 </span>
               </div>
               {watchSubdomain && (
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Your Pype URL will be: https://{watchSubdomain}.pype.app.br
                 </p>
               )}
@@ -235,7 +243,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="plan" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="plan" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Plan
               </label>
               <select {...register('plan')} className="input mt-1">
@@ -286,13 +294,13 @@ export default function RegisterPage() {
           </div>
 
           <div className="text-center">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               By creating an account, you agree to our{' '}
-              <a href="#" className="text-primary-600 hover:text-primary-500">
+              <a href="#" className="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300">
                 Terms of Service
               </a>{' '}
               and{' '}
-              <a href="#" className="text-primary-600 hover:text-primary-500">
+              <a href="#" className="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300">
                 Privacy Policy
               </a>
             </p>
