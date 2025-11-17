@@ -290,6 +290,13 @@ export default function PipelineTable({
                       {formatDistanceToNow(new Date(pipeline.createdAt), { addSuffix: true })}
                     </dd>
                   </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Owner</dt>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white flex items-center gap-1">
+                      <UserIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      {pipeline.createdByUserName || 'Unknown'}
+                    </dd>
+                  </div>
                   {pipeline.updatedAt && (
                     <div>
                       <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</dt>
@@ -354,6 +361,13 @@ export default function PipelineTable({
                 <span className="text-gray-500 dark:text-gray-400">Created</span>
                 <span className="text-gray-900 dark:text-white">
                   {formatDistanceToNow(new Date(pipeline.createdAt), { addSuffix: true })}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-500 dark:text-gray-400">Owner</span>
+                <span className="text-gray-900 dark:text-white flex items-center gap-1">
+                  <UserIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                  {pipeline.createdByUserName || 'Unknown'}
                 </span>
               </div>
               {pipeline.lastExecutedAt && (

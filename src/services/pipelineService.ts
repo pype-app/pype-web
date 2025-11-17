@@ -19,6 +19,7 @@ export interface PipelineListItem {
   lastExecutedAt?: string;
   tags?: string[];
   createdByUserId?: string;
+  createdByUserName?: string;
 }
 
 export interface PipelineFilters {
