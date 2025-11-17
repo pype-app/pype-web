@@ -279,21 +279,23 @@ export default function AnalyticsPage() {
                   <line x1="0" y1="200" x2="400" y2="200" stroke="currentColor" strokeWidth="1" className="text-gray-300 dark:text-gray-600" />
                   
                   {/* Line chart */}
-                  <polyline
-                    points={trends.map((trend, index) => {
-                      const x = (index / (trends.length - 1)) * 400;
-                      const y = 200 - (trend.successRate * 2);
-                      return `${x},${y}`;
-                    }).join(' ')}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    className="text-green-500 dark:text-green-400"
-                  />
+                  {trends.length > 1 ? (
+                    <polyline
+                      points={trends.map((trend, index) => {
+                        const x = (index / (trends.length - 1)) * 400;
+                        const y = 200 - (trend.successRate * 2);
+                        return `${x},${y}`;
+                      }).join(' ')}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      className="text-green-500 dark:text-green-400"
+                    />
+                  ) : null}
                   
                   {/* Data points */}
                   {trends.map((trend, index) => {
-                    const x = (index / (trends.length - 1)) * 400;
+                    const x = trends.length > 1 ? (index / (trends.length - 1)) * 400 : 200;
                     const y = 200 - (trend.successRate * 2);
                     return (
                       <g key={index}>
