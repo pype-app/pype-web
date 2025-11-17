@@ -35,8 +35,14 @@ export interface TestEnvironmentVariableResponse {
 
 export const environmentVariablesService = {
   // Get all environment variables and secrets
-  async getAll(): Promise<EnvironmentVariable[]> {
-    return apiClient.get('/api/environment-variables');
+  async getAll(onlyMine?: boolean): Promise<EnvironmentVariable[]> {
+    const params = new URLSearchParams();
+    if (onlyMine !== undefined) {
+      params.append('onlyMine', onlyMine.toString());
+    }
+    const queryString = params.toString();
+    const url = queryString ? `/api/environment-variables?${queryString}` : '/api/environment-variables';
+    return apiClient.get(url);
   },
 
   // Get environment variable by ID
