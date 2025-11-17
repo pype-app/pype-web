@@ -198,13 +198,53 @@ export default function AnalyticsPage() {
             <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
               Execution Trends
             </h3>
-            <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Chart placeholder</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">Integration with Chart.js or D3.js needed</p>
+            {loading ? (
+              <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <ArrowPathIcon className="mx-auto h-8 w-8 text-gray-400 dark:text-gray-500 animate-spin" />
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+                </div>
               </div>
-            </div>
+            ) : trends.length === 0 ? (
+              <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No execution data for this period</p>
+                </div>
+              </div>
+            ) : (
+              <div className="h-64">
+                <div className="flex items-end justify-between h-full gap-1 pb-6">
+                  {trends.map((trend, index) => {
+                    const maxExecutions = Math.max(...trends.map(t => t.totalExecutions), 1);
+                    const height = (trend.totalExecutions / maxExecutions) * 100;
+                    const date = new Date(trend.date);
+                    const label = period === '24h' 
+                      ? date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
+                      : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    
+                    return (
+                      <div key={index} className="flex-1 flex flex-col items-center justify-end h-full group">
+                        <div className="relative w-full">
+                          <div 
+                            className="w-full bg-blue-500 dark:bg-blue-400 rounded-t transition-all group-hover:bg-blue-600 dark:group-hover:bg-blue-300"
+                            style={{ height: `${height}%` }}
+                            title={`${trend.totalExecutions} executions (${trend.successRate.toFixed(1)}% success)`}
+                          >
+                            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                              {trend.totalExecutions} exec
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 transform -rotate-45 origin-top-left whitespace-nowrap">
+                          {label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -214,13 +254,72 @@ export default function AnalyticsPage() {
             <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
               Success Rate Over Time
             </h3>
-            <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <ArrowTrendingUpIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Chart placeholder</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">Integration with Chart.js or D3.js needed</p>
+            {loading ? (
+              <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <ArrowPathIcon className="mx-auto h-8 w-8 text-gray-400 dark:text-gray-500 animate-spin" />
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+                </div>
               </div>
-            </div>
+            ) : trends.length === 0 ? (
+              <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <ArrowTrendingUpIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No data for this period</p>
+                </div>
+              </div>
+            ) : (
+              <div className="h-64 relative">
+                <svg className="w-full h-full" viewBox="0 0 400 200" preserveAspectRatio="none">
+                  {/* Grid lines */}
+                  <line x1="0" y1="0" x2="400" y2="0" stroke="currentColor" strokeWidth="1" className="text-gray-300 dark:text-gray-600" />
+                  <line x1="0" y1="50" x2="400" y2="50" stroke="currentColor" strokeWidth="1" className="text-gray-200 dark:text-gray-700" strokeDasharray="4" />
+                  <line x1="0" y1="100" x2="400" y2="100" stroke="currentColor" strokeWidth="1" className="text-gray-200 dark:text-gray-700" strokeDasharray="4" />
+                  <line x1="0" y1="150" x2="400" y2="150" stroke="currentColor" strokeWidth="1" className="text-gray-200 dark:text-gray-700" strokeDasharray="4" />
+                  <line x1="0" y1="200" x2="400" y2="200" stroke="currentColor" strokeWidth="1" className="text-gray-300 dark:text-gray-600" />
+                  
+                  {/* Line chart */}
+                  <polyline
+                    points={trends.map((trend, index) => {
+                      const x = (index / (trends.length - 1)) * 400;
+                      const y = 200 - (trend.successRate * 2);
+                      return `${x},${y}`;
+                    }).join(' ')}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    className="text-green-500 dark:text-green-400"
+                  />
+                  
+                  {/* Data points */}
+                  {trends.map((trend, index) => {
+                    const x = (index / (trends.length - 1)) * 400;
+                    const y = 200 - (trend.successRate * 2);
+                    return (
+                      <g key={index}>
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r="4"
+                          fill="currentColor"
+                          className="text-green-500 dark:text-green-400"
+                        />
+                        <title>{`${new Date(trend.date).toLocaleDateString()}: ${trend.successRate.toFixed(1)}%`}</title>
+                      </g>
+                    );
+                  })}
+                </svg>
+                
+                {/* Y-axis labels */}
+                <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400 -ml-8">
+                  <span>100%</span>
+                  <span>75%</span>
+                  <span>50%</span>
+                  <span>25%</span>
+                  <span>0%</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -284,38 +383,91 @@ export default function AnalyticsPage() {
           <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
             Quick Insights
           </h3>
-          <div className="space-y-4">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <ClockIcon className="h-5 w-5 text-blue-500 dark:text-blue-400 mt-0.5" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-gray-900 dark:text-gray-100">
-                  <span className="font-medium">Peak hours:</span> Most executions happen between 8 AM - 12 PM
-                </p>
-              </div>
+          {loading ? (
+            <div className="flex items-center justify-center h-24">
+              <ArrowPathIcon className="h-8 w-8 text-gray-400 dark:text-gray-500 animate-spin" />
             </div>
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <ArrowTrendingUpIcon className="h-5 w-5 text-green-500 dark:text-green-400 mt-0.5" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-gray-900 dark:text-gray-100">
-                  <span className="font-medium">Performance improvement:</span> Average execution time decreased by 15% this month
-                </p>
-              </div>
+          ) : overview ? (
+            <div className="space-y-4">
+              {overview.successRate >= 90 ? (
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <ArrowTrendingUpIcon className="h-5 w-5 text-green-500 dark:text-green-400 mt-0.5" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="font-medium">Excellent performance:</span> Success rate is at {overview.successRate.toFixed(1)}%, well above target
+                    </p>
+                  </div>
+                </div>
+              ) : overview.successRate < 80 ? (
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <ArrowTrendingDownIcon className="h-5 w-5 text-red-500 dark:text-red-400 mt-0.5" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="font-medium">Attention needed:</span> Success rate is at {overview.successRate.toFixed(1)}%, below recommended threshold
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+              
+              {overview.durationChange < 0 ? (
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <ClockIcon className="h-5 w-5 text-green-500 dark:text-green-400 mt-0.5" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="font-medium">Performance improved:</span> Average execution time decreased by {Math.abs(overview.durationChange).toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+              ) : overview.durationChange > 0 ? (
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <ClockIcon className="h-5 w-5 text-yellow-500 dark:text-yellow-400 mt-0.5" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="font-medium">Duration increased:</span> Average execution time increased by {overview.durationChange.toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+              
+              {topPipelines.length > 0 && (
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <ChartBarIcon className="h-5 w-5 text-blue-500 dark:text-blue-400 mt-0.5" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="font-medium">Most active pipeline:</span> {topPipelines[0].pipelineName} with {topPipelines[0].totalExecutions} executions
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {overview.failedExecutions > 0 && (
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <ArrowTrendingDownIcon className="h-5 w-5 text-red-500 dark:text-red-400 mt-0.5" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      <span className="font-medium">Failed executions:</span> {overview.failedExecutions} execution{overview.failedExecutions !== 1 ? 's' : ''} failed in this period
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <ChartBarIcon className="h-5 w-5 text-purple-500 dark:text-purple-400 mt-0.5" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-gray-900 dark:text-gray-100">
-                  <span className="font-medium">Data volume:</span> Processing 40% more data compared to last month
-                </p>
-              </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500 dark:text-gray-400">No insights available</p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
