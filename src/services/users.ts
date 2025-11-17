@@ -93,8 +93,14 @@ export const usersService = {
 
   // Activate/deactivate user
   async toggleActive(userId: string, isActive: boolean): Promise<UserWithStatus> {
-    const user = await apiClient.patch(`/api/users/${userId}/status`, { isActive });
-    return normalizeUserResponse(user);
+    const endpoint = isActive 
+      ? `/api/users/${userId}/activate`
+      : `/api/users/${userId}/deactivate`;
+    
+    await apiClient.post(endpoint);
+    
+    // Refetch user to get updated state
+    return this.getById(userId);
   },
 
   // Reset user password (admin only)
