@@ -260,18 +260,18 @@ export default function EnvironmentPage() {
                   )}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredVariables.map((variable) => (
-                  <tr key={variable.id} className="hover:bg-gray-50">
+                  <tr key={variable.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {variable.isSecret ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
                             <KeyIcon className="h-3 w-3" />
                             Secret
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
                             <GlobeAltIcon className="h-3 w-3" />
                             Environment
                           </span>
@@ -279,10 +279,10 @@ export default function EnvironmentPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{variable.key}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">{variable.key}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600 max-w-xs truncate">
+                      <div className="text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
                         {variable.description || '-'}
                       </div>
                     </td>
@@ -290,12 +290,12 @@ export default function EnvironmentPage() {
                       <div className="flex items-center gap-2">
                         {variable.isSecret ? (
                           <>
-                            <span className="text-sm text-gray-600 font-mono">
+                            <span className="text-sm text-gray-600 dark:text-gray-300 font-mono">
                               {showValues[variable.id] ? variable.value : '••••••••'}
                             </span>
                             <button
                               onClick={() => toggleShowValue(variable.id)}
-                              className="text-gray-400 hover:text-gray-600"
+                              className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                             >
                               {showValues[variable.id] ? (
                                 <EyeSlashIcon className="h-4 w-4" />
@@ -305,13 +305,13 @@ export default function EnvironmentPage() {
                             </button>
                           </>
                         ) : (
-                          <span className="text-sm text-gray-600 font-mono max-w-xs truncate">
+                          <span className="text-sm text-gray-600 dark:text-gray-300 font-mono max-w-xs truncate">
                             {variable.value}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                       {new Date(variable.updatedAt || variable.createdAt).toLocaleDateString('pt-BR')}
                     </td>
                     {canCreateEdit && (
@@ -319,14 +319,14 @@ export default function EnvironmentPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openModal(variable)}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                             title="Edit"
                           >
                             <PencilIcon className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(variable.id)}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
                             title="Delete"
                           >
                             <TrashIcon className="h-4 w-4" />
@@ -366,7 +366,7 @@ interface VariableModalProps {
 function VariableModal({ variable, onClose, onSave, canManageSecrets }: VariableModalProps) {
   const [formData, setFormData] = useState({
     key: variable?.key || '',
-    value: variable?.value || '',
+    value: variable?.isSecret ? '' : (variable?.value || ''), // Empty if secret (will use placeholder)
     description: variable?.description || '',
     isSecret: variable?.isSecret || false,
   });
@@ -374,11 +374,20 @@ function VariableModal({ variable, onClose, onSave, canManageSecrets }: Variable
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If editing a secret and value is empty, user didn't change it - send masked value
+    const valueToSend = variable?.isSecret && formData.value === '' 
+      ? variable.value // Send the masked value from backend
+      : formData.value;
+    
     setLoading(true);
 
     try {
     if (variable) {
-      await environmentVariablesService.update(variable.id, formData);
+      await environmentVariablesService.update(variable.id, {
+        ...formData,
+        value: valueToSend
+      });
       toast.success('Variable updated successfully');
     } else {
       await environmentVariablesService.create(formData);
@@ -397,20 +406,20 @@ function VariableModal({ variable, onClose, onSave, canManageSecrets }: Variable
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose}></div>
+        <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-80 transition-opacity" onClick={onClose}></div>
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl dark:shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <form onSubmit={handleSubmit}>
-            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     {variable ? 'Edit Variable' : 'New Variable'}
                   </h3>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Variable Name *
                   </label>
                   <input
@@ -418,35 +427,40 @@ function VariableModal({ variable, onClose, onSave, canManageSecrets }: Variable
                     required
                     value={formData.key}
                     onChange={(e) => setFormData({ ...formData, key: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="Ex: DATABASE_URL, API_KEY"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Value *
                   </label>
                   <textarea
-                    required
+                    required={!variable?.isSecret} // Not required if editing secret (can leave empty to keep old value)
                     rows={3}
                     value={formData.value}
                     onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Variable value"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                    placeholder={variable?.isSecret ? `${variable.value} (leave empty to keep current)` : "Variable value"}
                   />
+                  {variable?.isSecret && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      For security, the current value is masked. Enter a new value to update it, or leave empty to keep the current value.
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Descrição
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Description
                   </label>
                   <input
                     type="text"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Descrição opcional"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                    placeholder="Optional description"
                   />
                 </div>
 
@@ -457,28 +471,28 @@ function VariableModal({ variable, onClose, onSave, canManageSecrets }: Variable
                       id="isSecret"
                       checked={formData.isSecret}
                       onChange={(e) => setFormData({ ...formData, isSecret: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
                     />
-                    <label htmlFor="isSecret" className="ml-2 block text-sm text-gray-700">
-                      É um secret (será criptografado e ocultado)
+                    <label htmlFor="isSecret" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                      Is a secret (will be encrypted and hidden)
                     </label>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
               >
                 {loading ? 'Saving...' : variable ? 'Save' : 'Create'}
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
               >
                 Cancel
               </button>
