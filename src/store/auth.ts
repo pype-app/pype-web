@@ -39,7 +39,7 @@ interface AuthState {
 interface AuthActions {
   login: (credentials: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<AuthResponse>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setTokens: (accessToken: string, refreshToken: string, expiresAt: string) => void;
   setUser: (user: User) => void;
   setTenant: (tenant: Tenant) => void;
@@ -153,14 +153,16 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      logout: () => {
-        // Call logout API endpoint if available
+      logout: async () => {
+        // Call logout API endpoint before clearing state (so headers are still available)
         try {
-          apiClient.post('/api/auth/logout');
+          await apiClient.post('/api/auth/logout');
         } catch (error) {
           // Ignore errors in logout
+          console.warn('Logout API call failed:', error);
         }
 
+        // Clear state after API call
         set({
           user: null,
           tenant: null,

@@ -24,8 +24,8 @@ interface HeaderProps {
 export default function Header({ setSidebarOpen }: HeaderProps) {
   const { user, tenant, logout } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
