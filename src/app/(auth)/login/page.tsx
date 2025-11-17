@@ -23,7 +23,6 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, isLoading, error, clearError } = useAuthStore();
-  const [showTenantField, setShowTenantField] = useState(false);
 
   useEffect(() => {
     const message = searchParams?.get('message');
@@ -53,10 +52,13 @@ export default function LoginPage() {
       clearError();
       clearErrors();
       
+      // Get last used tenant from localStorage
+      const lastTenant = typeof window !== 'undefined' ? localStorage.getItem('pype-last-tenant') : null;
+      
       const loginData: LoginRequest = {
         email: data.email,
         password: data.password,
-        tenantSubdomain: data.tenantSubdomain,
+        tenantSubdomain: data.tenantSubdomain || lastTenant || undefined,
       };
 
       await login(loginData);
@@ -136,34 +138,9 @@ export default function LoginPage() {
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
               )}
             </div>
-
-            {showTenantField && (
-              <div>
-                <label htmlFor="tenantSubdomain" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Tenant Subdomain (optional)
-                </label>
-                <input
-                  {...register('tenantSubdomain')}
-                  type="text"
-                  className="input mt-1"
-                  placeholder="your-company"
-                />
-                {errors.tenantSubdomain && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.tenantSubdomain.message}</p>
-                )}
-              </div>
-            )}
           </div>
 
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setShowTenantField(!showTenantField)}
-              className="text-sm text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
-            >
-              {showTenantField ? 'Hide' : 'Show'} tenant field
-            </button>
-
+          <div className="flex items-center justify-end">
             <Link
               href="/forgot-password"
               className="text-sm text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
