@@ -62,10 +62,15 @@ export default function LoginPage() {
       };
 
       await login(loginData);
+      
+      // Only redirect on successful login
       toast.success('Login successful!');
       router.push('/dashboard');
-    } catch (error) {
-      toast.error('Login failed. Please check your credentials.');
+    } catch (error: any) {
+      // Error is already set in authStore, just show toast
+      const errorMessage = error?.response?.data?.error || 'Login failed. Please check your credentials.';
+      toast.error(errorMessage);
+      // Don't redirect, let user see the error message
     }
   };
 
