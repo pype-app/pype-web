@@ -8,7 +8,8 @@ import {
   ExclamationTriangleIcon,
   ClockIcon,
   ChartBarIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
 
 import MetricGrid from '@/components/dashboard/MetricGrid';
@@ -18,13 +19,24 @@ import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import { dashboardService } from '@/services/dashboardService';
 import { DashboardStats, MetricCardProps, TimeSeriesDataPoint, ChartDataPoint } from '@/types/dashboard';
 import { useInterval } from '@/hooks/useInterval';
+import { useAuthStore } from '@/store/auth';
+import { UserRole } from '@/types';
 
 export default function DashboardPage() {
+  const { user } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [onlyMine, setOnlyMine] = useState(() => {
+    // Load "Only Mine" preference from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('pype-dashboard-only-mine');
+      return saved === 'true';
+    }
+    return false;
+  });
   const [autoRefresh, setAutoRefresh] = useState(() => {
     // Load auto-refresh preference from localStorage
     if (typeof window !== 'undefined') {
@@ -33,6 +45,13 @@ export default function DashboardPage() {
     }
     return true;
   });
+
+  // Save "Only Mine" preference to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pype-dashboard-only-mine', String(onlyMine));
+    }
+  }, [onlyMine]);
 
   // Save auto-refresh preference to localStorage when it changes
   useEffect(() => {
@@ -50,7 +69,9 @@ export default function DashboardPage() {
       }
       setError(null);
 
-      const data = await dashboardService.getStats();
+      // USER sempre filtra por criador
+      const shouldFilter = user?.role === UserRole.User || onlyMine;
+      const data = await dashboardService.getStats(shouldFilter);
       setStats(data);
       setLastRefresh(new Date());
     } catch (err) {
@@ -74,7 +95,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [onlyMine]);
 
   // Preparar dados para os cards de métricas
   const getMetricCards = (): MetricCardProps[] => {
@@ -209,6 +230,29 @@ export default function DashboardPage() {
         </div>
         
         <div className="flex items-center space-x-3">
+          {/* Only Mine filter - Only for Admin/Owner */}
+          {user && (user.role === UserRole.Admin || user.role === UserRole.Owner) && (
+            <button
+              onClick={() => setOnlyMine(!onlyMine)}
+              className={`inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold shadow-sm transition-colors ${
+                onlyMine
+                  ? 'bg-blue-600 text-white hover:bg-blue-500'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              <UserCircleIcon className="h-4 w-4 mr-2" />
+              {onlyMine ? 'All Pipelines' : 'Only Mine'}
+            </button>
+          )}
+
+          {/* USER role badge */}
+          {user?.role === UserRole.User && (
+            <div className="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-1 ring-inset ring-blue-600/20 dark:ring-blue-400/30">
+              <UserCircleIcon className="h-4 w-4 mr-2" />
+              Your Pipelines
+            </div>
+          )}
+
           {/* Auto-refresh toggle */}
           <div className="flex items-center">
             <button
