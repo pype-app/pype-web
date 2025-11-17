@@ -83,7 +83,7 @@ export default function PipelineFiltersComponent({
         <div className="flex-1">
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
             </div>
             <input
               type="text"
@@ -91,7 +91,7 @@ export default function PipelineFiltersComponent({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               disabled={loading}
-              className="input pl-10 disabled:opacity-50"
+              className="block w-full rounded-md border-0 py-2 pl-10 pr-3 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:focus:ring-blue-500 disabled:opacity-50 sm:text-sm sm:leading-6"
             />
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function PipelineFiltersComponent({
             value={filters.status || 'all'}
             onChange={(e) => handleStatusChange(e.target.value)}
             disabled={loading}
-            className="input w-auto disabled:opacity-50"
+            className="block rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:focus:ring-blue-500 disabled:opacity-50 sm:text-sm sm:leading-6"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>

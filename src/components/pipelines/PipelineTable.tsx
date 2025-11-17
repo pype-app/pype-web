@@ -17,6 +17,7 @@ import { cronToHuman } from '@/utils/cronUtils';
 interface PipelineTableProps {
   pipelines: PipelineListItem[];
   loading?: boolean;
+  currentUserId?: string;
   onView?: (pipeline: PipelineListItem) => void;
   onEdit?: (pipeline: PipelineListItem) => void;
   onRun?: (pipeline: PipelineListItem) => void;
@@ -45,7 +46,8 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 }
 
 function PipelineActions({ 
-  pipeline, 
+  pipeline,
+  currentUserId,
   onView, 
   onEdit, 
   onRun, 
@@ -56,6 +58,7 @@ function PipelineActions({
   onExport 
 }: {
   pipeline: PipelineListItem;
+  currentUserId?: string;
   onView?: (pipeline: PipelineListItem) => void;
   onEdit?: (pipeline: PipelineListItem) => void;
   onRun?: (pipeline: PipelineListItem) => void;
@@ -65,6 +68,9 @@ function PipelineActions({
   onDuplicate?: (pipeline: PipelineListItem) => void;
   onExport?: (pipeline: PipelineListItem) => void;
 }) {
+  // Check if current user owns this pipeline
+  const isOwner = !pipeline.createdByUserId || pipeline.createdByUserId === currentUserId;
+
   return (
     <div className="flex items-center gap-2">
       {/* Quick actions - visible */}
@@ -103,17 +109,9 @@ function PipelineActions({
           leaveFrom="transform opacity-100 scale-100"
           leaveTo="transform opacity-0 scale-95"
         >
-          <Menu.Items className="dropdown-menu"
-            style={{
-              position: 'absolute',
-              right: 0,
-              zIndex: 1000,
-              marginTop: '0.5rem',
-              width: '12rem',
-              transformOrigin: 'top right',
-            }}
-          >
-            {onEdit && (
+          <Menu.Items className="absolute right-0 z-[100] mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 py-1 shadow-xl ring-1 ring-black/5 dark:ring-white/10 focus:outline-none backdrop-blur-sm">
+            {/* Edit - only for owner */}
+            {isOwner && onEdit && (
               <Menu.Item>
                 {({ active }) => (
                   <button
@@ -130,6 +128,7 @@ function PipelineActions({
               </Menu.Item>
             )}
 
+            {/* Suspend/Resume - available for all admins */}
             {pipeline.isActive ? (
               onSuspend && (
                 <Menu.Item>
@@ -166,6 +165,7 @@ function PipelineActions({
               )
             )}
 
+            {/* Duplicate - available for all */}
             {onDuplicate && (
               <Menu.Item>
                 {({ active }) => (
@@ -183,6 +183,7 @@ function PipelineActions({
               </Menu.Item>
             )}
 
+            {/* Export - available for all */}
             {onExport && (
               <Menu.Item>
                 {({ active }) => (
@@ -200,7 +201,8 @@ function PipelineActions({
               </Menu.Item>
             )}
 
-            {onDelete && (
+            {/* Delete - only for owner */}
+            {isOwner && onDelete && (
               <Menu.Item>
                 {({ active }) => (
                   <button
@@ -248,6 +250,7 @@ function PipelineTags({ tags }: { tags?: string[] }) {
 export default function PipelineTable({
   pipelines,
   loading = false,
+  currentUserId,
   onView,
   onEdit,
   onRun,
@@ -307,91 +310,158 @@ export default function PipelineTable({
   }
 
   return (
-    <div className="table-card" style={{ overflow: 'visible' }}>
-      <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
-        {pipelines.map((pipeline) => (
-          <li key={pipeline.id} className="table-row relative">
-            <div className="px-4 py-4 sm:px-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center min-w-0 flex-1">
-                  <div className="flex-shrink-0">
-                    <StatusBadge isActive={pipeline.isActive} />
-                  </div>
-                  <div className="ml-4 min-w-0 flex-1">
-                    <div className="flex items-center">
-                      <h3 className="text-lg font-medium text-primary truncate">
-                        {pipeline.name}
-                      </h3>
-                      <span className="ml-2 text-sm text-muted">
-                        v{pipeline.version}
-                      </span>
+    <div className="overflow-hidden">
+      {/* Desktop view */}
+      <div className="hidden sm:block table-card">
+        <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
+          {pipelines.map((pipeline) => (
+            <li key={pipeline.id} className="table-row group">
+              <div className="px-4 py-4 sm:px-6 group-hover:bg-gray-50 dark:group-hover:bg-gray-700/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <div className="flex-shrink-0">
+                      <StatusBadge isActive={pipeline.isActive} />
                     </div>
-                    {pipeline.description && (
-                      <p className="text-sm text-muted mt-1 line-clamp-2">
-                        {pipeline.description}
-                      </p>
-                    )}
-                    <PipelineTags tags={pipeline.tags} />
+                    <div className="ml-4 min-w-0 flex-1">
+                      <div className="flex items-center">
+                        <h3 className="text-lg font-medium text-primary truncate">
+                          {pipeline.name}
+                        </h3>
+                        <span className="ml-2 text-sm text-muted">
+                          v{pipeline.version}
+                        </span>
+                      </div>
+                      {pipeline.description && (
+                        <p className="text-sm text-muted mt-1 line-clamp-2">
+                          {pipeline.description}
+                        </p>
+                      )}
+                      <PipelineTags tags={pipeline.tags} />
+                    </div>
+                  </div>
+                  
+                  <div className="flex-shrink-0 relative z-10">
+                    <PipelineActions
+                      pipeline={pipeline}
+                      currentUserId={currentUserId}
+                      onView={onView}
+                      onEdit={onEdit}
+                      onRun={onRun}
+                      onSuspend={onSuspend}
+                      onResume={onResume}
+                      onDelete={onDelete}
+                      onDuplicate={onDuplicate}
+                      onExport={onExport}
+                    />
                   </div>
                 </div>
                 
-                <div className="flex-shrink-0 relative z-10">
-                  <PipelineActions
-                    pipeline={pipeline}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onRun={onRun}
-                    onSuspend={onSuspend}
-                    onResume={onResume}
-                    onDelete={onDelete}
-                    onDuplicate={onDuplicate}
-                    onExport={onExport}
-                  />
+                <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <div>
+                    <dt className="text-sm font-medium text-muted">Created</dt>
+                    <dd className="mt-1 text-sm text-primary">
+                      {formatDistanceToNow(new Date(pipeline.createdAt), { addSuffix: true })}
+                    </dd>
+                  </div>
+                  {pipeline.updatedAt && (
+                    <div>
+                      <dt className="text-sm font-medium text-muted">Last Updated</dt>
+                      <dd className="mt-1 text-sm text-primary">
+                        {formatDistanceToNow(new Date(pipeline.updatedAt), { addSuffix: true })}
+                      </dd>
+                    </div>
+                  )}
+                  {pipeline.lastExecutedAt && (
+                    <div>
+                      <dt className="text-sm font-medium text-muted">Last Execution</dt>
+                      <dd className="mt-1 text-sm text-primary">
+                        {formatDistanceToNow(new Date(pipeline.lastExecutedAt), { addSuffix: true })}
+                      </dd>
+                    </div>
+                  )}
+                  {!pipeline.lastExecutedAt && (
+                    <div>
+                      <dt className="text-sm font-medium text-muted">Last Execution</dt>
+                      <dd className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        Never
+                      </dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt className="text-sm font-medium text-muted">Schedule</dt>
+                    <dd className="mt-1 text-sm text-primary">
+                      {cronToHuman(pipeline.cronExpression || '')}
+                    </dd>
+                  </div>
                 </div>
               </div>
-              
-              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div>
-                  <dt className="text-sm font-medium text-muted">Created</dt>
-                  <dd className="mt-1 text-sm text-primary">
-                    {formatDistanceToNow(new Date(pipeline.createdAt), { addSuffix: true })}
-                  </dd>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Mobile view */}
+      <div className="sm:hidden space-y-4">
+        {pipelines.map((pipeline) => (
+          <div key={pipeline.id} className="table-card p-4">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <StatusBadge isActive={pipeline.isActive} />
+                  <span className="text-xs text-muted">v{pipeline.version}</span>
                 </div>
-                {pipeline.updatedAt && (
-                  <div>
-                    <dt className="text-sm font-medium text-muted">Last Updated</dt>
-                    <dd className="mt-1 text-sm text-primary">
-                      {formatDistanceToNow(new Date(pipeline.updatedAt), { addSuffix: true })}
-                    </dd>
-                  </div>
+                <h3 className="text-base font-medium text-primary truncate">
+                  {pipeline.name}
+                </h3>
+                {pipeline.description && (
+                  <p className="text-sm text-muted mt-1 line-clamp-2">
+                    {pipeline.description}
+                  </p>
                 )}
-                {pipeline.lastExecutedAt && (
-                  <div>
-                    <dt className="text-sm font-medium text-muted">Last Execution</dt>
-                    <dd className="mt-1 text-sm text-primary">
-                      {formatDistanceToNow(new Date(pipeline.lastExecutedAt), { addSuffix: true })}
-                    </dd>
-                  </div>
-                )}
-                {!pipeline.lastExecutedAt && (
-                  <div>
-                    <dt className="text-sm font-medium text-muted">Last Execution</dt>
-                    <dd className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      Never
-                    </dd>
-                  </div>
-                )}
-                <div>
-                  <dt className="text-sm font-medium text-muted">Schedule</dt>
-                  <dd className="mt-1 text-sm text-primary">
-                    {cronToHuman(pipeline.cronExpression || '')}
-                  </dd>
-                </div>
+                <PipelineTags tags={pipeline.tags} />
               </div>
             </div>
-          </li>
+
+            <div className="space-y-2 mb-3">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted">Created</span>
+                <span className="text-primary">
+                  {formatDistanceToNow(new Date(pipeline.createdAt), { addSuffix: true })}
+                </span>
+              </div>
+              {pipeline.lastExecutedAt && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted">Last Execution</span>
+                  <span className="text-primary">
+                    {formatDistanceToNow(new Date(pipeline.lastExecutedAt), { addSuffix: true })}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between text-xs">
+                <span className="text-muted">Schedule</span>
+                <span className="text-primary">
+                  {cronToHuman(pipeline.cronExpression || '')}
+                </span>
+              </div>
+            </div>
+
+            <div className="relative z-10">
+              <PipelineActions
+                pipeline={pipeline}
+                currentUserId={currentUserId}
+                onView={onView}
+                onEdit={onEdit}
+                onRun={onRun}
+                onSuspend={onSuspend}
+                onResume={onResume}
+                onDelete={onDelete}
+                onDuplicate={onDuplicate}
+                onExport={onExport}
+              />
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
