@@ -6,6 +6,8 @@ export interface User {
   role: UserRole;
   emailConfirmed: boolean;
   lastLoginAt?: string;
+  createdAt: string;
+  profileImageData?: string;
   tenant: Tenant;
 }
 
