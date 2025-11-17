@@ -47,7 +47,29 @@ export default function ProfilePage() {
       description: 'Logged in successfully',
       timestamp: new Date(user.lastLoginAt),
     }] : []),
-  ];
+    // Mock pipeline events for demonstration
+    {
+      id: '3',
+      type: 'pipeline_created' as const,
+      title: 'Pipeline created',
+      description: 'Created "Data Integration Pipeline"',
+      timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
+    },
+    {
+      id: '4',
+      type: 'pipeline_started' as const,
+      title: 'Pipeline started',
+      description: 'Started "Data Integration Pipeline"',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+    },
+    {
+      id: '5',
+      type: 'pipeline_paused' as const,
+      title: 'Pipeline paused',
+      description: 'Paused "ETL Process"',
+      timestamp: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
+    },
+  ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()); // Sort by most recent first
 
   // Load user data on mount
   useEffect(() => {
@@ -161,94 +183,98 @@ export default function ProfilePage() {
         onClose={() => setIsPasswordModalOpen(false)} 
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Personal Information Form with Profile Picture */}
-        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Personal Information Form with Profile Picture - 10 columns */}
+        <div className="lg:col-span-10 bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">
             Personal Information
           </h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Profile Picture Section */}
-            <div className="flex flex-col items-center pb-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="relative">
-                {profileImage ? (
-                  <img
-                    src={profileImage}
-                    alt="Profile"
-                    className="h-32 w-32 rounded-full object-cover ring-4 ring-gray-100 dark:ring-gray-700"
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {/* Profile Picture Section - 1 column */}
+              <div className="md:col-span-1 flex flex-col items-center">
+                <div className="relative">
+                  {profileImage ? (
+                    <img
+                      src={profileImage}
+                      alt="Profile"
+                      className="h-32 w-32 rounded-full object-cover ring-4 ring-gray-100 dark:ring-gray-700"
+                    />
+                  ) : (
+                    <UserCircleIcon className="h-32 w-32 text-gray-400 dark:text-gray-500" />
+                  )}
+                  
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 rounded-full bg-blue-600 p-2 text-white shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                  >
+                    <CameraIcon className="h-5 w-5" />
+                  </button>
+                  
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
                   />
-                ) : (
-                  <UserCircleIcon className="h-32 w-32 text-gray-400 dark:text-gray-500" />
-                )}
+                </div>
                 
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 rounded-full bg-blue-600 p-2 text-white shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-                >
-                  <CameraIcon className="h-5 w-5" />
-                </button>
-                
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </div>
-              
-              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">
-                JPG, PNG or GIF. Max 5MB.<br />
-                Auto-compressed to 200x200px
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm"
-                  placeholder="John"
-                />
+                <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                  JPG, PNG or GIF.<br />Max 5MB.
+                </p>
               </div>
 
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm"
-                  placeholder="Doe"
-                />
-              </div>
-            </div>
+              {/* Form Fields - 3 columns */}
+              <div className="md:col-span-3 space-y-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm"
+                      placeholder="John"
+                    />
+                  </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={formData.email}
-                disabled
-                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 sm:text-sm cursor-not-allowed"
-              />
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Email cannot be changed. Contact an administrator if you need to update it.
-              </p>
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm"
+                      placeholder="Doe"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={formData.email}
+                    disabled
+                    className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 sm:text-sm cursor-not-allowed"
+                  />
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Email cannot be changed. Contact an administrator if you need to update it.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-between items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -291,60 +317,51 @@ export default function ProfilePage() {
           </form>
         </div>
 
-        {/* Account Info Card */}
-        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
+        {/* Account Info Card - 2 columns */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">
             Account Information
           </h2>
           
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0">
-                <div className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user?.role || 0)}`}>
-                  {getRoleText(user?.role || 0)}
-                </div>
+            <div className="flex flex-col items-center">
+              <div className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user?.role || 0)}`}>
+                {getRoleText(user?.role || 0)}
               </div>
             </div>
             
-            <div className="flex items-start gap-3 text-sm">
-              <BuildingOfficeIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-gray-500 dark:text-gray-400">Tenant</p>
-                <p className="font-medium text-gray-900 dark:text-white">{user?.tenant?.name || 'N/A'}</p>
-              </div>
+            <div className="flex flex-col items-center gap-1 text-sm text-center">
+              <BuildingOfficeIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+              <p className="text-gray-500 dark:text-gray-400 text-xs">Tenant</p>
+              <p className="font-medium text-gray-900 dark:text-white">{user?.tenant?.name || 'N/A'}</p>
             </div>
             
             {user?.createdAt && (
-              <div className="flex items-start gap-3 text-sm">
-                <CheckCircleIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400">Member since</p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {new Date(user.createdAt).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </p>
-                </div>
+              <div className="flex flex-col items-center gap-1 text-sm text-center">
+                <CheckCircleIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                <p className="text-gray-500 dark:text-gray-400 text-xs">Member since</p>
+                <p className="font-medium text-gray-900 dark:text-white text-xs">
+                  {new Date(user.createdAt).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
+                </p>
               </div>
             )}
             
             {user?.lastLoginAt && (
-              <div className="flex items-start gap-3 text-sm">
-                <ClockIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400">Last login</p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {new Date(user.lastLoginAt).toLocaleString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
+              <div className="flex flex-col items-center gap-1 text-sm text-center">
+                <ClockIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                <p className="text-gray-500 dark:text-gray-400 text-xs">Last login</p>
+                <p className="font-medium text-gray-900 dark:text-white text-xs">
+                  {new Date(user.lastLoginAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
               </div>
             )}
           </div>
@@ -356,8 +373,10 @@ export default function ProfilePage() {
         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6 text-center">
           Recent Activity
         </h2>
-        <div className="max-w-3xl mx-auto">
-          <ActivityTimeline events={timelineEvents} />
+        <div className="flex justify-center">
+          <div className="w-full max-w-3xl">
+            <ActivityTimeline events={timelineEvents} />
+          </div>
         </div>
       </div>
     </div>
