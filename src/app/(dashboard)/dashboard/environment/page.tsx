@@ -90,20 +90,8 @@ export default function EnvironmentPage() {
     return matchesSearch;
   });
 
-  const openModal = async (variable?: EnvironmentVariable) => {
-    if (variable) {
-      // Fetch the actual unmasked value for editing
-      try {
-        const fullVariable = await environmentVariablesService.getById(variable.id);
-        setEditingVariable(fullVariable);
-      } catch (error) {
-        console.error('Error fetching variable details:', error);
-        toast.error('Error loading variable details');
-        return;
-      }
-    } else {
-      setEditingVariable(null);
-    }
+  const openModal = (variable?: EnvironmentVariable) => {
+    setEditingVariable(variable || null);
     setIsModalOpen(true);
   };
 
@@ -447,6 +435,11 @@ function VariableModal({ variable, onClose, onSave, canManageSecrets }: Variable
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="Variable value"
                   />
+                  {variable?.isSecret && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      For security, the current value is masked. Enter a new value to update it.
+                    </p>
+                  )}
                 </div>
 
                 <div>
