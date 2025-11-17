@@ -67,6 +67,11 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
             error: null,
           });
+
+          // Save last used tenant to localStorage
+          if (user?.tenant?.subdomain && typeof window !== 'undefined') {
+            localStorage.setItem('pype-last-tenant', user.tenant.subdomain);
+          }
         } catch (error: any) {
           const errorMessage = error.response?.data?.error || 'Login failed';
           set({

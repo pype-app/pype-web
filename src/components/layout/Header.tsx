@@ -47,6 +47,24 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Tenant: <span className="font-medium text-gray-900 dark:text-gray-100">{tenant?.name || 'Loading...'}</span>
           </div>
+          {/* TODO: Future feature - Tenant Switcher */}
+          {/* Uncomment when multi-tenant support is ready */}
+          {/*
+          <Menu as="div" className="relative ml-3">
+            <Menu.Button className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+              Switch <ChevronDownIcon className="inline h-4 w-4" />
+            </Menu.Button>
+            <Menu.Items className="absolute left-0 z-10 mt-2 w-48 origin-top-left rounded-md bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <Menu.Item>
+                {({ active }) => (
+                  <button className={classNames(active ? 'bg-gray-100 dark:bg-gray-700' : '', 'block w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300')}>
+                    Tenant 1
+                  </button>
+                )}
+              </Menu.Item>
+            </Menu.Items>
+          </Menu>
+          */}
         </div>
         
         <div className="flex items-center gap-x-4 lg:gap-x-6">

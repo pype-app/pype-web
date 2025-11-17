@@ -25,7 +25,21 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(() => {
+    // Load auto-refresh preference from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('pype-dashboard-auto-refresh');
+      return saved === null ? true : saved === 'true';
+    }
+    return true;
+  });
+
+  // Save auto-refresh preference to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pype-dashboard-auto-refresh', String(autoRefresh));
+    }
+  }, [autoRefresh]);
 
   const loadStats = async (isRefresh = false) => {
     try {
@@ -346,13 +360,13 @@ export default function DashboardPage() {
           </div>
           <div className="mt-8">
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-              <a href="http://localhost:18080/hangfire" target="_blank" rel="noopener noreferrer" className="focus:outline-none">
+              <a href="/dashboard/analytics" className="focus:outline-none">
                 <span className="absolute inset-0" aria-hidden="true" />
-                Hangfire Dashboard
+                Analytics
               </a>
             </h3>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Monitor background jobs and recurring tasks.
+              View detailed analytics and performance metrics.
             </p>
           </div>
           <span
