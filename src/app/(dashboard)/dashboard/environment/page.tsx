@@ -366,7 +366,7 @@ interface VariableModalProps {
 function VariableModal({ variable, onClose, onSave, canManageSecrets }: VariableModalProps) {
   const [formData, setFormData] = useState({
     key: variable?.key || '',
-    value: variable?.value || '',
+    value: variable?.isSecret ? '' : (variable?.value || ''), // Empty if secret (will use placeholder)
     description: variable?.description || '',
     isSecret: variable?.isSecret || false,
   });
@@ -374,11 +374,20 @@ function VariableModal({ variable, onClose, onSave, canManageSecrets }: Variable
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If editing a secret and value is empty, user didn't change it - send masked value
+    const valueToSend = variable?.isSecret && formData.value === '' 
+      ? variable.value // Send the masked value from backend
+      : formData.value;
+    
     setLoading(true);
 
     try {
     if (variable) {
-      await environmentVariablesService.update(variable.id, formData);
+      await environmentVariablesService.update(variable.id, {
+        ...formData,
+        value: valueToSend
+      });
       toast.success('Variable updated successfully');
     } else {
       await environmentVariablesService.create(formData);
@@ -428,16 +437,16 @@ function VariableModal({ variable, onClose, onSave, canManageSecrets }: Variable
                     Value *
                   </label>
                   <textarea
-                    required
+                    required={!variable?.isSecret} // Not required if editing secret (can leave empty to keep old value)
                     rows={3}
                     value={formData.value}
                     onChange={(e) => setFormData({ ...formData, value: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                    placeholder="Variable value"
+                    placeholder={variable?.isSecret ? `${variable.value} (leave empty to keep current)` : "Variable value"}
                   />
                   {variable?.isSecret && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      For security, the current value is masked. Enter a new value to update it.
+                      For security, the current value is masked. Enter a new value to update it, or leave empty to keep the current value.
                     </p>
                   )}
                 </div>
