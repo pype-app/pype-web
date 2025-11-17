@@ -6,12 +6,16 @@ import {
   PhotoIcon,
   KeyIcon,
   PencilIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  PlayIcon,
+  PauseIcon,
+  PlusCircleIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
 export interface TimelineEvent {
   id: string;
-  type: 'account_created' | 'login' | 'profile_updated' | 'password_changed' | 'photo_uploaded' | 'email_confirmed';
+  type: 'account_created' | 'login' | 'profile_updated' | 'password_changed' | 'photo_uploaded' | 'email_confirmed' | 'pipeline_created' | 'pipeline_started' | 'pipeline_paused' | 'pipeline_deleted';
   title: string;
   description?: string;
   timestamp: Date;
@@ -36,6 +40,14 @@ const getEventIcon = (type: TimelineEvent['type']) => {
       return <PhotoIcon className="h-5 w-5" />;
     case 'email_confirmed':
       return <CheckCircleIcon className="h-5 w-5" />;
+    case 'pipeline_created':
+      return <PlusCircleIcon className="h-5 w-5" />;
+    case 'pipeline_started':
+      return <PlayIcon className="h-5 w-5" />;
+    case 'pipeline_paused':
+      return <PauseIcon className="h-5 w-5" />;
+    case 'pipeline_deleted':
+      return <TrashIcon className="h-5 w-5" />;
     default:
       return <CheckCircleIcon className="h-5 w-5" />;
   }
@@ -55,6 +67,14 @@ const getEventColor = (type: TimelineEvent['type']) => {
       return 'bg-pink-500 dark:bg-pink-600';
     case 'email_confirmed':
       return 'bg-teal-500 dark:bg-teal-600';
+    case 'pipeline_created':
+      return 'bg-indigo-500 dark:bg-indigo-600';
+    case 'pipeline_started':
+      return 'bg-emerald-500 dark:bg-emerald-600';
+    case 'pipeline_paused':
+      return 'bg-yellow-500 dark:bg-yellow-600';
+    case 'pipeline_deleted':
+      return 'bg-red-500 dark:bg-red-600';
     default:
       return 'bg-gray-500 dark:bg-gray-600';
   }

@@ -161,16 +161,16 @@ export default function ProfilePage() {
         onClose={() => setIsPasswordModalOpen(false)} 
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left Column - Profile Image & Info */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Profile Image */}
-          <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Profile Picture
-            </h2>
-            
-            <div className="flex flex-col items-center">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Personal Information Form with Profile Picture */}
+        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">
+            Personal Information
+          </h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Profile Picture Section */}
+            <div className="flex flex-col items-center pb-6 border-b border-gray-200 dark:border-gray-700">
               <div className="relative">
                 {profileImage ? (
                   <img
@@ -204,170 +204,160 @@ export default function ProfilePage() {
                 Auto-compressed to 200x200px
               </p>
             </div>
-          </div>
 
-          {/* Account Info Card */}
-          <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Account Information
-            </h2>
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="flex-shrink-0">
-                  <div className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user?.role || 0)}`}>
-                    {getRoleText(user?.role || 0)}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 text-sm">
-                <BuildingOfficeIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400">Tenant</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{user?.tenant?.name || 'N/A'}</p>
-                </div>
-              </div>
-              
-              {user?.createdAt && (
-                <div className="flex items-start gap-3 text-sm">
-                  <CheckCircleIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Member since</p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {new Date(user.createdAt).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {user?.lastLoginAt && (
-                <div className="flex items-start gap-3 text-sm">
-                  <ClockIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Last login</p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {new Date(user.lastLoginAt).toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Activity Timeline */}
-          <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Recent Activity
-            </h2>
-            <ActivityTimeline events={timelineEvents} />
-          </div>
-        </div>
-
-        {/* Right Column - Forms */}
-        <div className="lg:col-span-2">
-          {/* Personal Information Form */}
-          <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Personal Information
-            </h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm"
-                    placeholder="John"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm"
-                    placeholder="Doe"
-                  />
-                </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm"
+                  placeholder="John"
+                />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Email
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Last Name
                 </label>
                 <input
-                  type="email"
-                  id="email"
-                  value={formData.email}
-                  disabled
-                  className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 sm:text-sm cursor-not-allowed"
+                  type="text"
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white sm:text-sm"
+                  placeholder="Doe"
                 />
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Email cannot be changed. Contact an administrator if you need to update it.
-                </p>
               </div>
+            </div>
 
-              <div className="flex justify-between items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={formData.email}
+                disabled
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 sm:text-sm cursor-not-allowed"
+              />
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Email cannot be changed. Contact an administrator if you need to update it.
+              </p>
+            </div>
+
+            <div className="flex justify-between items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              >
+                <KeyIcon className="h-4 w-4" />
+                Change Password
+              </button>
+
+              <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsPasswordModalOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                  onClick={() => {
+                    if (user) {
+                      setFormData({
+                        firstName: user.firstName || '',
+                        lastName: user.lastName || '',
+                        email: user.email || '',
+                      });
+                      setProfileImage(user.profileImageData || null);
+                      setImageFile(null);
+                    }
+                  }}
+                  className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                 >
-                  <KeyIcon className="h-4 w-4" />
-                  Change Password
+                  Cancel
                 </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
 
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (user) {
-                        setFormData({
-                          firstName: user.firstName || '',
-                          lastName: user.lastName || '',
-                          email: user.email || '',
-                        });
-                        setProfileImage(user.profileImageData || null);
-                        setImageFile(null);
-                      }
-                    }}
-                    className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? 'Saving...' : 'Save Changes'}
-                  </button>
+        {/* Account Info Card */}
+        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">
+            Account Information
+          </h2>
+          
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user?.role || 0)}`}>
+                  {getRoleText(user?.role || 0)}
                 </div>
               </div>
-            </form>
+            </div>
+            
+            <div className="flex items-start gap-3 text-sm">
+              <BuildingOfficeIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">Tenant</p>
+                <p className="font-medium text-gray-900 dark:text-white">{user?.tenant?.name || 'N/A'}</p>
+              </div>
+            </div>
+            
+            {user?.createdAt && (
+              <div className="flex items-start gap-3 text-sm">
+                <CheckCircleIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Member since</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {new Date(user.createdAt).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {user?.lastLoginAt && (
+              <div className="flex items-start gap-3 text-sm">
+                <ClockIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Last login</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {new Date(user.lastLoginAt).toLocaleString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
+        </div>
+      </div>
+
+      {/* Activity Timeline - Full Width Centered */}
+      <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl rounded-lg p-6">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6 text-center">
+          Recent Activity
+        </h2>
+        <div className="max-w-3xl mx-auto">
+          <ActivityTimeline events={timelineEvents} />
         </div>
       </div>
     </div>
