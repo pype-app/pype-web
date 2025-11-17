@@ -18,6 +18,8 @@ export interface PipelineListItem {
   updatedAt?: string;
   lastExecutedAt?: string;
   tags?: string[];
+  createdByUserId?: string;
+  createdByUserName?: string;
 }
 
 export interface PipelineFilters {

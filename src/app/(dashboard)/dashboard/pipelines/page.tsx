@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 
 import { usePipelines } from '@/hooks/usePipelines';
 import { useConfirmationModal } from '@/hooks/useConfirmationModal';
+import { useAuthStore } from '@/store/auth';
 import PipelineTable from '@/components/pipelines/PipelineTable';
 import PipelineFilters from '@/components/pipelines/PipelineFilters';
 import Pagination from '@/components/ui/Pagination';
@@ -15,6 +16,7 @@ import { PipelineListItem } from '@/services/pipelineService';
 
 export default function PipelinesPage() {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
   const {
     pipelines,
     loading,
@@ -151,6 +153,7 @@ export default function PipelinesPage() {
       <PipelineTable
         pipelines={pipelines}
         loading={loading}
+        currentUserId={user?.id}
         onView={handleView}
         onEdit={handleEdit}
         onRun={(pipeline) => runPipeline(pipeline.id)}
