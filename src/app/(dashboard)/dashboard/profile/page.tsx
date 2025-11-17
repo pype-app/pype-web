@@ -43,6 +43,11 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
+  // Load user data on mount
+  useEffect(() => {
+    refreshUserData();
+  }, []);
+
   useEffect(() => {
     if (user) {
       setFormData({

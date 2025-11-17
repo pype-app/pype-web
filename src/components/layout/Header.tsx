@@ -83,7 +83,15 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
           <Menu as="div" className="relative">
             <Menu.Button className="-m-1.5 flex items-center p-1.5">
               <span className="sr-only">Open user menu</span>
-              <UserCircleIcon className="h-8 w-8 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+              {user?.profileImageData ? (
+                <img
+                  src={user.profileImageData}
+                  alt="Profile"
+                  className="h-8 w-8 rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-700"
+                />
+              ) : (
+                <UserCircleIcon className="h-8 w-8 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+              )}
               <span className="hidden lg:flex lg:items-center">
                 <span className="ml-4 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100" aria-hidden="true">
                   {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email || 'User'}
