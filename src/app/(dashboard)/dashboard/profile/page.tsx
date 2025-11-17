@@ -31,29 +31,19 @@ export default function ProfilePage() {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
-    const [loadingTimeline, setLoadingTimeline] = useState(false);
 
-    // Load user data and timeline on mount
+    // Load user data on mount
     useEffect(() => {
         refreshUserData();
-        loadTimelineData();
     }, []);
 
-    const loadTimelineData = async () => {
-        setLoadingTimeline(true);
-        try {
-            // Fetch audit logs for user activities
-            const response = await apiClient.get('/api/audit-logs', {
-                params: {
-                    pageSize: 10,
-                    pageNumber: 1,
-                }
-            });
-
+    // Update timeline when user data changes
+    useEffect(() => {
+        if (user) {
             const events: TimelineEvent[] = [];
 
             // Add account creation
-            if (user?.createdAt) {
+            if (user.createdAt) {
                 events.push({
                     id: 'account_created',
                     type: 'account_created',
@@ -64,7 +54,7 @@ export default function ProfilePage() {
             }
 
             // Add last login
-            if (user?.lastLoginAt) {
+            if (user.lastLoginAt) {
                 events.push({
                     id: 'last_login',
                     type: 'login',
@@ -74,102 +64,11 @@ export default function ProfilePage() {
                 });
             }
 
-            // Parse audit logs
-            if (response.items && Array.isArray(response.items)) {
-                response.items.forEach((log: any) => {
-                    const action = log.action?.toLowerCase() || '';
-                    const entityType = log.entityType?.toLowerCase() || '';
-                    
-                    // Pipeline activities
-                    if (entityType === 'pipeline') {
-                        if (action.includes('create')) {
-                            events.push({
-                                id: `log_${log.id}`,
-                                type: 'pipeline_created',
-                                title: 'Pipeline created',
-                                description: `Created "${log.entityName || 'Pipeline'}"`,
-                                timestamp: new Date(log.timestamp),
-                            });
-                        } else if (action.includes('start') || action.includes('run')) {
-                            events.push({
-                                id: `log_${log.id}`,
-                                type: 'pipeline_started',
-                                title: 'Pipeline started',
-                                description: `Started "${log.entityName || 'Pipeline'}"`,
-                                timestamp: new Date(log.timestamp),
-                            });
-                        } else if (action.includes('pause') || action.includes('stop')) {
-                            events.push({
-                                id: `log_${log.id}`,
-                                type: 'pipeline_paused',
-                                title: 'Pipeline paused',
-                                description: `Paused "${log.entityName || 'Pipeline'}"`,
-                                timestamp: new Date(log.timestamp),
-                            });
-                        } else if (action.includes('delete')) {
-                            events.push({
-                                id: `log_${log.id}`,
-                                type: 'pipeline_deleted',
-                                title: 'Pipeline deleted',
-                                description: `Deleted "${log.entityName || 'Pipeline'}"`,
-                                timestamp: new Date(log.timestamp),
-                            });
-                        }
-                    }
-
-                    // Profile activities
-                    if (entityType === 'user' && log.entityId === user?.id) {
-                        if (action.includes('update')) {
-                            events.push({
-                                id: `log_${log.id}`,
-                                type: 'profile_updated',
-                                title: 'Profile updated',
-                                description: 'Updated profile information',
-                                timestamp: new Date(log.timestamp),
-                            });
-                        } else if (action.includes('password')) {
-                            events.push({
-                                id: `log_${log.id}`,
-                                type: 'password_changed',
-                                title: 'Password changed',
-                                description: 'Updated account password',
-                                timestamp: new Date(log.timestamp),
-                            });
-                        }
-                    }
-                });
-            }
-
             // Sort by most recent first
             events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
             setTimelineEvents(events);
-        } catch (error) {
-            console.error('Error loading timeline:', error);
-            // Fallback to basic events on error
-            const fallbackEvents: TimelineEvent[] = [];
-            if (user?.createdAt) {
-                fallbackEvents.push({
-                    id: 'account_created',
-                    type: 'account_created',
-                    title: 'Account created',
-                    description: 'Welcome to Pype!',
-                    timestamp: new Date(user.createdAt),
-                });
-            }
-            if (user?.lastLoginAt) {
-                fallbackEvents.push({
-                    id: 'last_login',
-                    type: 'login',
-                    title: 'Last login',
-                    description: 'Logged in successfully',
-                    timestamp: new Date(user.lastLoginAt),
-                });
-            }
-            setTimelineEvents(fallbackEvents);
-        } finally {
-            setLoadingTimeline(false);
         }
-    };
+    }, [user]);
 
     useEffect(() => {
         if (user) {
@@ -419,19 +318,6 @@ export default function ProfilePage() {
                     </h2>
 
                     <div className="space-y-4">
-                        <div className='flex flex-row items-center justify-center gap-6'>
-                            <div className="flex flex-col items-center">
-                                <div className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user?.role || 0)}`}>
-                                    {getRoleText(user?.role || 0)}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col items-center gap-1 text-sm text-center">
-                                <BuildingOfficeIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                                <p className="text-gray-500 dark:text-gray-400 text-xs">Tenant</p>
-                                <p className="font-medium text-gray-900 dark:text-white">{user?.tenant?.name || 'N/A'}</p>
-                            </div>
-                        </div>
                         {user?.createdAt && (
                             <div className="flex flex-col items-center gap-1 text-sm text-center">
                                 <CheckCircleIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
@@ -459,7 +345,20 @@ export default function ProfilePage() {
                                     })}
                                 </p>
                             </div>
-                        )}
+                        )}                        
+                        <div className='flex flex-row items-center justify-center gap-6'>
+                            <div className="flex flex-col items-center gap-1 text-sm text-center">
+                                <BuildingOfficeIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                                <p className="text-gray-500 dark:text-gray-400 text-xs">Tenant</p>
+                                <p className="font-medium text-gray-900 dark:text-white">{user?.tenant?.name || 'N/A'}</p>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <div className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user?.role || 0)}`}>
+                                    {getRoleText(user?.role || 0)}
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -471,14 +370,7 @@ export default function ProfilePage() {
                 </h2>
                 <div className="flex justify-center">
                     <div className="w-full max-w-3xl">
-                        {loadingTimeline ? (
-                            <div className="text-center py-8">
-                                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-                                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading activities...</p>
-                            </div>
-                        ) : (
-                            <ActivityTimeline events={timelineEvents} />
-                        )}
+                        <ActivityTimeline events={timelineEvents} />
                     </div>
                 </div>
             </div>
