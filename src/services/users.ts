@@ -1,6 +1,28 @@
 import apiClient from '@/lib/api-client';
 import { User, UserRole } from '@/types';
 
+// Helper to parse role from API (string) to UserRole enum (number)
+function parseRole(role: any): UserRole {
+  if (typeof role === 'number') return role;
+  
+  const roleMap: Record<string, UserRole> = {
+    'Viewer': UserRole.Viewer,
+    'User': UserRole.User,
+    'Admin': UserRole.Admin,
+    'Owner': UserRole.Owner,
+  };
+  
+  return roleMap[role] ?? UserRole.User;
+}
+
+// Transform API response to normalize role
+function normalizeUserResponse(user: any): any {
+  return {
+    ...user,
+    role: parseRole(user.role),
+  };
+}
+
 export interface CreateUserRequest {
   email: string;
   firstName?: string;
@@ -32,22 +54,26 @@ export interface UserWithStatus extends User {
 export const usersService = {
   // Get all users for current tenant
   async getAll(): Promise<UserWithStatus[]> {
-    return apiClient.get('/api/users');
+    const users = await apiClient.get('/api/users');
+    return users.map(normalizeUserResponse);
   },
 
   // Get user by ID
   async getById(id: string): Promise<UserWithStatus> {
-    return apiClient.get(`/api/users/${id}`);
+    const user = await apiClient.get(`/api/users/${id}`);
+    return normalizeUserResponse(user);
   },
 
   // Create new user
   async create(data: CreateUserRequest): Promise<UserWithStatus> {
-    return apiClient.post('/api/users', data);
+    const user = await apiClient.post('/api/users', data);
+    return normalizeUserResponse(user);
   },
 
   // Update existing user
   async update(id: string, data: UpdateUserRequest): Promise<UserWithStatus> {
-    return apiClient.put(`/api/users/${id}`, data);
+    const user = await apiClient.put(`/api/users/${id}`, data);
+    return normalizeUserResponse(user);
   },
 
   // Delete user
@@ -67,7 +93,8 @@ export const usersService = {
 
   // Activate/deactivate user
   async toggleActive(userId: string, isActive: boolean): Promise<UserWithStatus> {
-    return apiClient.patch(`/api/users/${userId}/status`, { isActive });
+    const user = await apiClient.patch(`/api/users/${userId}/status`, { isActive });
+    return normalizeUserResponse(user);
   },
 
   // Reset user password (admin only)
