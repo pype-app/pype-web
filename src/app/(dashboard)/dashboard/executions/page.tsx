@@ -17,6 +17,8 @@ interface PipelineExecution {
   id: string;
   pipelineId: string;
   pipelineName: string;
+  pipelineOwner: string;
+  triggeredByUser: string;
   tenantId: string;
   status: string;
   startedAt: string;
@@ -376,7 +378,7 @@ export default function ExecutionsPage() {
           <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
             {filteredExecutions.map((execution) => (
               <li key={execution.id}>
-                <div className="px-4 py-4 sm:px-6">
+                  <div className="px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
@@ -389,6 +391,20 @@ export default function ExecutionsPage() {
                           </h3>
                           <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
                             #{execution.id.slice(0, 8)}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-3 mt-1">
+                          <span className="inline-flex items-center text-xs text-gray-600 dark:text-gray-400">
+                            <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Owner: {execution.pipelineOwner}
+                          </span>
+                          <span className="inline-flex items-center text-xs text-gray-600 dark:text-gray-400">
+                            <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Triggered by: {execution.triggeredByUser}
                           </span>
                         </div>
                         <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -411,9 +427,7 @@ export default function ExecutionsPage() {
                           </p>
                         )}
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
+                    </div>                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => handleViewLogs(execution)}
