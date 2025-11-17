@@ -217,7 +217,9 @@ export default function AnalyticsPage() {
                 <div className="flex items-end justify-between h-full gap-1 pb-6">
                   {trends.map((trend, index) => {
                     const maxExecutions = Math.max(...trends.map(t => t.totalExecutions), 1);
-                    const height = (trend.totalExecutions / maxExecutions) * 100;
+                    const heightPercent = (trend.totalExecutions / maxExecutions) * 100;
+                    // Minimum 8% height so bar is always visible
+                    const height = Math.max(heightPercent, 8);
                     const date = new Date(trend.date);
                     const label = period === '24h' 
                       ? date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
@@ -269,7 +271,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-64 relative">
+              <div className="h-64 relative pl-10">
                 <svg className="w-full h-full" viewBox="0 0 400 200" preserveAspectRatio="none">
                   {/* Grid lines */}
                   <line x1="0" y1="0" x2="400" y2="0" stroke="currentColor" strokeWidth="1" className="text-gray-300 dark:text-gray-600" />
@@ -313,7 +315,7 @@ export default function AnalyticsPage() {
                 </svg>
                 
                 {/* Y-axis labels */}
-                <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400 -ml-8">
+                <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>100%</span>
                   <span>75%</span>
                   <span>50%</span>
