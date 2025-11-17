@@ -1,17 +1,17 @@
-# Pype UI - Frontend Application
+# Pype Web - Frontend Application
 
-Frontend moderno em Next.js 14 para o Pype (pype.app.br), um orquestrador de pipelines multi-tenant.
+Frontend moderno em Next.js 16 para o Pype (pype.app.br), um orquestrador de pipelines multi-tenant.
 
 ## 🚀 Tecnologias
 
-- **Next.js 14** - Framework React com App Router
+- **Next.js 16 (Turbopack)** - Framework React com App Router
 - **TypeScript** - Tipagem estática
 - **Tailwind CSS** - Estilização utilitária
 - **Zustand** - Gerenciamento de estado
 - **React Hook Form + Zod** - Formulários e validação
 - **Axios** - Cliente HTTP
 - **React Hot Toast** - Notificações
-- **Headless UI** - Componentes acessíveis
+- **Heroicons** - Ícones SVG
 - **Monaco Editor** - Editor de código para YAML
 
 ## 📁 Estrutura do Projeto
@@ -236,20 +236,23 @@ O design é completamente responsivo usando:
 
 ### 🚧 Em Progresso
 
-- [ ] Dashboard principal
-- [ ] Layout de navegação
-- [ ] Listagem de pipelines
-- [ ] Criação de pipelines
-- [ ] Monitoring em tempo real
+- [ ] Página de analytics aprimorada
+- [ ] Real-time updates para execuções
+- [ ] Melhorias na UX do editor YAML
 
-### 📋 Próximas Tarefas
+### ✅ Recentemente Completado
 
-1. **Dashboard Layout** - Sidebar, header, navegação
-2. **Pipeline List** - Tabela com filtros e ações
-3. **Pipeline Editor** - Upload YAML e editor Monaco
-4. **Real-time Updates** - WebSockets para logs
-5. **User Management** - CRUD de usuários
-6. **Settings** - Configurações do tenant
+- [x] Setup inicial do projeto
+- [x] Sistema de autenticação completo  
+- [x] Dashboard principal com métricas
+- [x] Listagem e gerenciamento de pipelines
+- [x] Filtros avançados de pipelines (por criador, status, tags)
+- [x] Execuções e logs
+- [x] Gerenciamento de usuários
+- [x] Gerenciamento de variáveis de ambiente
+- [x] Cookie banner e páginas legais (Privacy Policy, ToS)
+- [x] Dark mode completo
+- [x] Layout responsivo
 
 ## 🤝 Contribuição
 
