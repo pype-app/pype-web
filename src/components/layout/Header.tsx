@@ -7,8 +7,7 @@ import {
   BellIcon, 
   ChevronDownIcon,
   UserCircleIcon,
-  ArrowRightOnRectangleIcon,
-  Cog6ToothIcon
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '@/store/auth';
 import ThemeToggle from '@/components/ui/ThemeToggle';
@@ -105,7 +104,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
                 <Menu.Item>
                   {({ active }) => (
                     <a
-                      href="#"
+                      href="/dashboard/profile"
                       className={classNames(
                         active ? 'bg-gray-50 dark:bg-gray-700' : '',
                         'flex items-center px-3 py-1 text-sm leading-6 text-gray-900 dark:text-gray-100'
@@ -113,20 +112,6 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
                     >
                       <UserCircleIcon className="mr-3 h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
                       Your profile
-                    </a>
-                  )}
-                </Menu.Item>
-                <Menu.Item>
-                  {({ active }) => (
-                    <a
-                      href="#"
-                      className={classNames(
-                        active ? 'bg-gray-50 dark:bg-gray-700' : '',
-                        'flex items-center px-3 py-1 text-sm leading-6 text-gray-900 dark:text-gray-100'
-                      )}
-                    >
-                      <Cog6ToothIcon className="mr-3 h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
-                      Settings
                     </a>
                   )}
                 </Menu.Item>
