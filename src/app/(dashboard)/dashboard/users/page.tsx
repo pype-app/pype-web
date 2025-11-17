@@ -325,14 +325,16 @@ export default function UsersPage() {
                             </button>
                           )}
                           
-                          <button
-                            onClick={() => handleResetPassword(user.id)}
-                            className="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
-                            title="Reset Password"
-                            disabled={actionLoading[user.id]}
-                          >
-                            <KeyIcon className="h-4 w-4" />
-                          </button>
+                          {user.emailConfirmed && (
+                            <button
+                              onClick={() => handleResetPassword(user.id)}
+                              className="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                              title="Reset Password"
+                              disabled={actionLoading[user.id]}
+                            >
+                              <KeyIcon className="h-4 w-4" />
+                            </button>
+                          )}
                           
                           <button
                             onClick={() => handleToggleActive(user.id, !user.isActive)}
