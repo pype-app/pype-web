@@ -16,7 +16,8 @@ import {
   TrashIcon,
   MagnifyingGlassIcon,
   KeyIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
 
 export default function EnvironmentPage() {
@@ -28,21 +29,26 @@ export default function EnvironmentPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVariable, setEditingVariable] = useState<EnvironmentVariable | null>(null);
   const [filter, setFilter] = useState<'all' | 'secrets' | 'env'>('all');
+  const [onlyMine, setOnlyMine] = useState(false);
 
   // Só Admin e Owner podem acessar secrets
   const canManageSecrets = hasRole([UserRole.Admin, UserRole.Owner]);
+  
+  // Check if user can toggle onlyMine (Admin/Owner)
+  const canToggleOnlyMine = hasRole([UserRole.Admin, UserRole.Owner]);
+  const isUser = hasRole([UserRole.User]);
   
   // Usuários normais só podem ver environment variables
   const canCreateEdit = hasRole([UserRole.User, UserRole.Admin, UserRole.Owner]);
 
   useEffect(() => {
     loadVariables();
-  }, []);
+  }, [onlyMine]);
 
   const loadVariables = async () => {
     try {
       setLoading(true);
-      const data = await environmentVariablesService.getAll();
+      const data = await environmentVariablesService.getAll(onlyMine);
       
       // Se não for admin/owner, filtra apenas environment variables
       const filteredData = canManageSecrets 
@@ -189,6 +195,31 @@ export default function EnvironmentPage() {
               <KeyIcon className="h-4 w-4" />
               Secrets
             </button>
+          )}
+
+          {/* Only Mine toggle - only for ADMIN/OWNER */}
+          {canToggleOnlyMine && (
+            <button
+              type="button"
+              onClick={() => setOnlyMine(!onlyMine)}
+              disabled={loading}
+              className={`inline-flex items-center gap-x-1.5 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm disabled:opacity-50 transition-colors ${
+                onlyMine
+                  ? 'bg-blue-600 text-white hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400 border border-blue-700 dark:border-blue-400'
+                  : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+              }`}
+            >
+              <UserCircleIcon className="-ml-0.5 h-5 w-5" aria-hidden="true" />
+              Only Mine
+            </button>
+          )}
+
+          {/* Info badge for USER role */}
+          {isUser && (
+            <div className="inline-flex items-center gap-x-1.5 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg">
+              <UserCircleIcon className="-ml-0.5 h-5 w-5" aria-hidden="true" />
+              Your Variables
+            </div>
           )}
         </div>
       </div>
