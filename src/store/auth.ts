@@ -3,6 +3,28 @@ import { persist } from 'zustand/middleware';
 import { User, Tenant, AuthResponse, LoginRequest, RegisterRequest, UserRole } from '@/types';
 import apiClient from '@/lib/api-client';
 
+// Helper to parse role from API (string) to UserRole enum (number)
+function parseRole(role: any): UserRole {
+  if (typeof role === 'number') return role;
+  
+  const roleMap: Record<string, UserRole> = {
+    'Viewer': UserRole.Viewer,
+    'User': UserRole.User,
+    'Admin': UserRole.Admin,
+    'Owner': UserRole.Owner,
+  };
+  
+  return roleMap[role] ?? UserRole.User;
+}
+
+// Normalize user response from API
+function normalizeUser(user: any): User {
+  return {
+    ...user,
+    role: parseRole(user.role),
+  };
+}
+
 interface AuthState {
   user: User | null;
   tenant: Tenant | null;
@@ -54,12 +76,15 @@ export const useAuthStore = create<AuthStore>()(
           
           const { accessToken, refreshToken, user, expiresIn } = response;
 
+          // Normalize user role from string to enum
+          const normalizedUser = normalizeUser(user);
+
           // Calculate expiration time from expiresIn seconds
           const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
           set({
-            user,
-            tenant: user?.tenant || null,
+            user: normalizedUser,
+            tenant: normalizedUser?.tenant || null,
             accessToken,
             refreshToken,
             expiresAt,
@@ -69,8 +94,8 @@ export const useAuthStore = create<AuthStore>()(
           });
 
           // Save last used tenant to localStorage
-          if (user?.tenant?.subdomain && typeof window !== 'undefined') {
-            localStorage.setItem('pype-last-tenant', user.tenant.subdomain);
+          if (normalizedUser?.tenant?.subdomain && typeof window !== 'undefined') {
+            localStorage.setItem('pype-last-tenant', normalizedUser.tenant.subdomain);
           }
         } catch (error: any) {
           const errorMessage = error.response?.data?.error || 'Login failed';
@@ -91,12 +116,15 @@ export const useAuthStore = create<AuthStore>()(
           
           const { accessToken, refreshToken, user, expiresIn } = response;
 
+          // Normalize user role from string to enum
+          const normalizedUser = normalizeUser(user);
+
           // Calculate expiration time from expiresIn seconds
           const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
           set({
-            user,
-            tenant: user.tenant,
+            user: normalizedUser,
+            tenant: normalizedUser.tenant,
             accessToken,
             refreshToken,
             expiresAt,
@@ -164,7 +192,8 @@ export const useAuthStore = create<AuthStore>()(
           if (!isAuthenticated) return;
 
           const user: User = await apiClient.get('/api/auth/me');
-          set({ user });
+          const normalizedUser = normalizeUser(user);
+          set({ user: normalizedUser });
         } catch (error) {
           console.error('Failed to refresh user data:', error);
         }
