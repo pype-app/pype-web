@@ -99,11 +99,19 @@ export const useAuthStore = create<AuthStore>()(
           }
         } catch (error: any) {
           const errorMessage = error.response?.data?.error || 'Login failed';
+          
+          // Ensure complete reset of auth state on error
           set({
+            user: null,
+            tenant: null,
+            accessToken: null,
+            refreshToken: null,
+            expiresAt: null,
+            isAuthenticated: false,
             isLoading: false,
             error: errorMessage,
-            isAuthenticated: false,
           });
+          
           throw error;
         }
       },
