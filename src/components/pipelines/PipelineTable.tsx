@@ -1,14 +1,12 @@
-import { Fragment } from 'react';
-import { Menu, Transition } from '@headlessui/react';
 import { 
   PlayIcon,
   PencilIcon,
   TrashIcon,
   EyeIcon,
-  EllipsisHorizontalIcon,
   PauseIcon,
   DocumentDuplicateIcon,
   ArrowDownTrayIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 import { PipelineListItem } from '@/services/pipelineService';
 import { formatDistanceToNow } from 'date-fns';
@@ -72,18 +70,8 @@ function PipelineActions({
   const isOwner = !pipeline.createdByUserId || pipeline.createdByUserId === currentUserId;
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Quick actions - visible */}
-      {pipeline.isActive && onRun && (
-        <button
-          onClick={() => onRun(pipeline)}
-          className="inline-flex items-center rounded-md bg-green-50 dark:bg-green-900/50 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300 ring-1 ring-inset ring-green-600/20 dark:ring-green-400/30 hover:bg-green-100 dark:hover:bg-green-900/70"
-        >
-          <PlayIcon className="h-3 w-3 mr-1" />
-          Run
-        </button>
-      )}
-
+    <div className="flex flex-wrap items-center gap-2">
+      {/* View button */}
       {onView && (
         <button
           onClick={() => onView(pipeline)}
@@ -94,133 +82,72 @@ function PipelineActions({
         </button>
       )}
 
-      {/* More actions - dropdown */}
-      <Menu as="div" className="relative inline-block text-left">
-        <Menu.Button className="inline-flex items-center rounded-md bg-white dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600">
-          <EllipsisHorizontalIcon className="h-3 w-3" />
-        </Menu.Button>
-
-        <Transition
-          as={Fragment}
-          enter="transition ease-out duration-100"
-          enterFrom="transform opacity-0 scale-95"
-          enterTo="transform opacity-100 scale-100"
-          leave="transition ease-in duration-75"
-          leaveFrom="transform opacity-100 scale-100"
-          leaveTo="transform opacity-0 scale-95"
+      {/* Run button - for active pipelines */}
+      {pipeline.isActive && onRun && (
+        <button
+          onClick={() => onRun(pipeline)}
+          className="inline-flex items-center rounded-md bg-green-50 dark:bg-green-900/20 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-600/20 dark:ring-green-400/20 hover:bg-green-100 dark:hover:bg-green-900/30"
         >
-          <Menu.Items className="absolute right-0 z-[100] mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 py-1 shadow-xl ring-1 ring-black/5 dark:ring-white/10 focus:outline-none backdrop-blur-sm">
-            {/* Edit - only for owner */}
-            {isOwner && onEdit && (
-              <Menu.Item>
-                {({ active }) => (
-                  <button
-                    onClick={() => onEdit(pipeline)}
-                    className={classNames(
-                      active ? 'bg-gray-100 dark:bg-gray-700' : '',
-                      'dropdown-item flex w-full'
-                    )}
-                  >
-                    <PencilIcon className="mr-3 h-4 w-4" />
-                    Edit
-                  </button>
-                )}
-              </Menu.Item>
-            )}
+          <PlayIcon className="h-3 w-3 mr-1" />
+          Run
+        </button>
+      )}
 
-            {/* Suspend/Resume - available for all admins */}
-            {pipeline.isActive ? (
-              onSuspend && (
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={() => onSuspend(pipeline)}
-                      className={classNames(
-                        active ? 'bg-gray-100 dark:bg-gray-700' : '',
-                        'dropdown-item flex w-full'
-                      )}
-                    >
-                      <PauseIcon className="mr-3 h-4 w-4" />
-                      Suspend
-                    </button>
-                  )}
-                </Menu.Item>
-              )
-            ) : (
-              onResume && (
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={() => onResume(pipeline)}
-                      className={classNames(
-                        active ? 'bg-gray-100 dark:bg-gray-700' : '',
-                        'dropdown-item flex w-full'
-                      )}
-                    >
-                      <PlayIcon className="mr-3 h-4 w-4" />
-                      Resume
-                    </button>
-                  )}
-                </Menu.Item>
-              )
-            )}
+      {/* Edit button - only for owner */}
+      {isOwner && onEdit && (
+        <button
+          onClick={() => onEdit(pipeline)}
+          className="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900/20 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-400 ring-1 ring-inset ring-blue-600/20 dark:ring-blue-400/20 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+        >
+          <PencilIcon className="h-3 w-3 mr-1" />
+          Edit
+        </button>
+      )}
 
-            {/* Duplicate - available for all */}
-            {onDuplicate && (
-              <Menu.Item>
-                {({ active }) => (
-                  <button
-                    onClick={() => onDuplicate(pipeline)}
-                    className={classNames(
-                      active ? 'bg-gray-100 dark:bg-gray-700' : '',
-                      'dropdown-item flex w-full'
-                    )}
-                  >
-                    <DocumentDuplicateIcon className="mr-3 h-4 w-4" />
-                    Duplicate
-                  </button>
-                )}
-              </Menu.Item>
-            )}
+      {/* Suspend/Resume - available for all admins */}
+      {pipeline.isActive ? (
+        onSuspend && (
+          <button
+            onClick={() => onSuspend(pipeline)}
+            className="inline-flex items-center rounded-md bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 text-xs font-medium text-yellow-700 dark:text-yellow-400 ring-1 ring-inset ring-yellow-600/20 dark:ring-yellow-400/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+          >
+            <PauseIcon className="h-3 w-3 mr-1" />
+            Suspend
+          </button>
+        )
+      ) : (
+        onResume && (
+          <button
+            onClick={() => onResume(pipeline)}
+            className="inline-flex items-center rounded-md bg-green-50 dark:bg-green-900/20 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-600/20 dark:ring-green-400/20 hover:bg-green-100 dark:hover:bg-green-900/30"
+          >
+            <PlayIcon className="h-3 w-3 mr-1" />
+            Resume
+          </button>
+        )
+      )}
 
-            {/* Export - available for all */}
-            {onExport && (
-              <Menu.Item>
-                {({ active }) => (
-                  <button
-                    onClick={() => onExport(pipeline)}
-                    className={classNames(
-                      active ? 'bg-gray-100 dark:bg-gray-700' : '',
-                      'dropdown-item flex w-full'
-                    )}
-                  >
-                    <ArrowDownTrayIcon className="mr-3 h-4 w-4" />
-                    Export
-                  </button>
-                )}
-              </Menu.Item>
-            )}
+      {/* Duplicate - available for all */}
+      {onDuplicate && (
+        <button
+          onClick={() => onDuplicate(pipeline)}
+          className="inline-flex items-center rounded-md bg-purple-50 dark:bg-purple-900/20 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-400 ring-1 ring-inset ring-purple-600/20 dark:ring-purple-400/20 hover:bg-purple-100 dark:hover:bg-purple-900/30"
+        >
+          <DocumentDuplicateIcon className="h-3 w-3 mr-1" />
+          Duplicate
+        </button>
+      )}
 
-            {/* Delete - only for owner */}
-            {isOwner && onDelete && (
-              <Menu.Item>
-                {({ active }) => (
-                  <button
-                    onClick={() => onDelete(pipeline)}
-                    className={classNames(
-                      active ? 'bg-red-50 dark:bg-red-900/50' : '',
-                      'flex w-full px-4 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/50'
-                    )}
-                  >
-                    <TrashIcon className="mr-3 h-4 w-4" />
-                    Delete
-                  </button>
-                )}
-              </Menu.Item>
-            )}
-          </Menu.Items>
-        </Transition>
-      </Menu>
+      {/* Delete - only for owner */}
+      {isOwner && onDelete && (
+        <button
+          onClick={() => onDelete(pipeline)}
+          className="inline-flex items-center rounded-md bg-red-50 dark:bg-red-900/20 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-400 ring-1 ring-inset ring-red-600/20 dark:ring-red-400/20 hover:bg-red-100 dark:hover:bg-red-900/30"
+        >
+          <TrashIcon className="h-3 w-3 mr-1" />
+          Delete
+        </button>
+      )}
     </div>
   );
 }
@@ -312,11 +239,11 @@ export default function PipelineTable({
   return (
     <div className="overflow-hidden">
       {/* Desktop view */}
-      <div className="hidden sm:block table-card">
+      <div className="hidden sm:block bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
         <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
           {pipelines.map((pipeline) => (
-            <li key={pipeline.id} className="table-row group">
-              <div className="px-4 py-4 sm:px-6 group-hover:bg-gray-50 dark:group-hover:bg-gray-700/50 transition-colors">
+            <li key={pipeline.id}>
+              <div className="px-4 py-4 sm:px-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center min-w-0 flex-1">
                     <div className="flex-shrink-0">
@@ -324,15 +251,15 @@ export default function PipelineTable({
                     </div>
                     <div className="ml-4 min-w-0 flex-1">
                       <div className="flex items-center">
-                        <h3 className="text-lg font-medium text-primary truncate">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white truncate">
                           {pipeline.name}
                         </h3>
-                        <span className="ml-2 text-sm text-muted">
+                        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
                           v{pipeline.version}
                         </span>
                       </div>
                       {pipeline.description && (
-                        <p className="text-sm text-muted mt-1 line-clamp-2">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
                           {pipeline.description}
                         </p>
                       )}
@@ -340,7 +267,7 @@ export default function PipelineTable({
                     </div>
                   </div>
                   
-                  <div className="flex-shrink-0 relative z-10">
+                  <div className="flex items-center gap-2">
                     <PipelineActions
                       pipeline={pipeline}
                       currentUserId={currentUserId}
@@ -358,38 +285,38 @@ export default function PipelineTable({
                 
                 <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
                   <div>
-                    <dt className="text-sm font-medium text-muted">Created</dt>
-                    <dd className="mt-1 text-sm text-primary">
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Created</dt>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
                       {formatDistanceToNow(new Date(pipeline.createdAt), { addSuffix: true })}
                     </dd>
                   </div>
                   {pipeline.updatedAt && (
                     <div>
-                      <dt className="text-sm font-medium text-muted">Last Updated</dt>
-                      <dd className="mt-1 text-sm text-primary">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
                         {formatDistanceToNow(new Date(pipeline.updatedAt), { addSuffix: true })}
                       </dd>
                     </div>
                   )}
                   {pipeline.lastExecutedAt && (
                     <div>
-                      <dt className="text-sm font-medium text-muted">Last Execution</dt>
-                      <dd className="mt-1 text-sm text-primary">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Execution</dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
                         {formatDistanceToNow(new Date(pipeline.lastExecutedAt), { addSuffix: true })}
                       </dd>
                     </div>
                   )}
                   {!pipeline.lastExecutedAt && (
                     <div>
-                      <dt className="text-sm font-medium text-muted">Last Execution</dt>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Execution</dt>
                       <dd className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                         Never
                       </dd>
                     </div>
                   )}
                   <div>
-                    <dt className="text-sm font-medium text-muted">Schedule</dt>
-                    <dd className="mt-1 text-sm text-primary">
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Schedule</dt>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
                       {cronToHuman(pipeline.cronExpression || '')}
                     </dd>
                   </div>
@@ -403,18 +330,18 @@ export default function PipelineTable({
       {/* Mobile view */}
       <div className="sm:hidden space-y-4">
         {pipelines.map((pipeline) => (
-          <div key={pipeline.id} className="table-card p-4">
+          <div key={pipeline.id} className="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-md p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <StatusBadge isActive={pipeline.isActive} />
-                  <span className="text-xs text-muted">v{pipeline.version}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">v{pipeline.version}</span>
                 </div>
-                <h3 className="text-base font-medium text-primary truncate">
+                <h3 className="text-base font-medium text-gray-900 dark:text-white truncate">
                   {pipeline.name}
                 </h3>
                 {pipeline.description && (
-                  <p className="text-sm text-muted mt-1 line-clamp-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
                     {pipeline.description}
                   </p>
                 )}
@@ -424,28 +351,28 @@ export default function PipelineTable({
 
             <div className="space-y-2 mb-3">
               <div className="flex justify-between text-xs">
-                <span className="text-muted">Created</span>
-                <span className="text-primary">
+                <span className="text-gray-500 dark:text-gray-400">Created</span>
+                <span className="text-gray-900 dark:text-white">
                   {formatDistanceToNow(new Date(pipeline.createdAt), { addSuffix: true })}
                 </span>
               </div>
               {pipeline.lastExecutedAt && (
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted">Last Execution</span>
-                  <span className="text-primary">
+                  <span className="text-gray-500 dark:text-gray-400">Last Execution</span>
+                  <span className="text-gray-900 dark:text-white">
                     {formatDistanceToNow(new Date(pipeline.lastExecutedAt), { addSuffix: true })}
                   </span>
                 </div>
               )}
               <div className="flex justify-between text-xs">
-                <span className="text-muted">Schedule</span>
-                <span className="text-primary">
+                <span className="text-gray-500 dark:text-gray-400">Schedule</span>
+                <span className="text-gray-900 dark:text-white">
                   {cronToHuman(pipeline.cronExpression || '')}
                 </span>
               </div>
             </div>
 
-            <div className="relative z-10">
+            <div className="flex items-center gap-2">
               <PipelineActions
                 pipeline={pipeline}
                 currentUserId={currentUserId}
