@@ -90,8 +90,20 @@ export default function EnvironmentPage() {
     return matchesSearch;
   });
 
-  const openModal = (variable?: EnvironmentVariable) => {
-    setEditingVariable(variable || null);
+  const openModal = async (variable?: EnvironmentVariable) => {
+    if (variable) {
+      // Fetch the actual unmasked value for editing
+      try {
+        const fullVariable = await environmentVariablesService.getById(variable.id);
+        setEditingVariable(fullVariable);
+      } catch (error) {
+        console.error('Error fetching variable details:', error);
+        toast.error('Error loading variable details');
+        return;
+      }
+    } else {
+      setEditingVariable(null);
+    }
     setIsModalOpen(true);
   };
 
@@ -260,18 +272,18 @@ export default function EnvironmentPage() {
                   )}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredVariables.map((variable) => (
-                  <tr key={variable.id} className="hover:bg-gray-50">
+                  <tr key={variable.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {variable.isSecret ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
                             <KeyIcon className="h-3 w-3" />
                             Secret
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
                             <GlobeAltIcon className="h-3 w-3" />
                             Environment
                           </span>
@@ -279,10 +291,10 @@ export default function EnvironmentPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{variable.key}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">{variable.key}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600 max-w-xs truncate">
+                      <div className="text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
                         {variable.description || '-'}
                       </div>
                     </td>
@@ -290,12 +302,12 @@ export default function EnvironmentPage() {
                       <div className="flex items-center gap-2">
                         {variable.isSecret ? (
                           <>
-                            <span className="text-sm text-gray-600 font-mono">
+                            <span className="text-sm text-gray-600 dark:text-gray-300 font-mono">
                               {showValues[variable.id] ? variable.value : '••••••••'}
                             </span>
                             <button
                               onClick={() => toggleShowValue(variable.id)}
-                              className="text-gray-400 hover:text-gray-600"
+                              className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                             >
                               {showValues[variable.id] ? (
                                 <EyeSlashIcon className="h-4 w-4" />
@@ -305,13 +317,13 @@ export default function EnvironmentPage() {
                             </button>
                           </>
                         ) : (
-                          <span className="text-sm text-gray-600 font-mono max-w-xs truncate">
+                          <span className="text-sm text-gray-600 dark:text-gray-300 font-mono max-w-xs truncate">
                             {variable.value}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                       {new Date(variable.updatedAt || variable.createdAt).toLocaleDateString('pt-BR')}
                     </td>
                     {canCreateEdit && (
@@ -319,14 +331,14 @@ export default function EnvironmentPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openModal(variable)}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                             title="Edit"
                           >
                             <PencilIcon className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(variable.id)}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
                             title="Delete"
                           >
                             <TrashIcon className="h-4 w-4" />
@@ -439,14 +451,14 @@ function VariableModal({ variable, onClose, onSave, canManageSecrets }: Variable
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Descrição
+                    Description
                   </label>
                   <input
                     type="text"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                    placeholder="Descrição opcional"
+                    placeholder="Optional description"
                   />
                 </div>
 
@@ -460,7 +472,7 @@ function VariableModal({ variable, onClose, onSave, canManageSecrets }: Variable
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
                     />
                     <label htmlFor="isSecret" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                      É um secret (será criptografado e ocultado)
+                      Is a secret (will be encrypted and hidden)
                     </label>
                   </div>
                 )}
