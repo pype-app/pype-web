@@ -36,6 +36,9 @@ export default function UsersPage() {
   // Apenas Admin e Owner podem gerenciar usuários
   const canManageUsers = hasRole([UserRole.Admin, UserRole.Owner]);
   const canInviteUsers = hasRole([UserRole.Admin, UserRole.Owner]);
+  
+  // ID do usuário logado
+  const currentUserId = user?.id;
 
   useEffect(() => {
     loadUsers();
@@ -333,18 +336,18 @@ export default function UsersPage() {
                           
                           <button
                             onClick={() => handleToggleActive(user.id, !user.isActive)}
-                            className={user.isActive ? "text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" : "text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"}
-                            title={user.isActive ? "Deactivate" : "Activate"}
-                            disabled={actionLoading[user.id]}
+                            className={user.isActive ? "text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-40 disabled:cursor-not-allowed" : "text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"}
+                            title={user.id === currentUserId ? "Cannot deactivate yourself" : (user.isActive ? "Deactivate" : "Activate")}
+                            disabled={actionLoading[user.id] || user.id === currentUserId}
                           >
                             {user.isActive ? <XCircleIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />}
                           </button>
                           
                           <button
                             onClick={() => handleDelete(user.id)}
-                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                            title="Delete"
-                            disabled={actionLoading[user.id]}
+                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                            title={user.id === currentUserId ? "Cannot delete yourself" : "Delete"}
+                            disabled={actionLoading[user.id] || user.id === currentUserId}
                           >
                             <TrashIcon className="h-4 w-4" />
                           </button>
