@@ -24,6 +24,7 @@ export interface PipelineFilters {
   search?: string;
   status?: 'all' | 'active' | 'inactive';
   tags?: string[];
+  onlyMine?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -48,6 +49,7 @@ class PipelineService {
     if (filters.search) params.append('search', filters.search);
     if (filters.status && filters.status !== 'all') params.append('status', filters.status);
     if (filters.tags?.length) params.append('tags', filters.tags.join(','));
+    if (filters.onlyMine !== undefined) params.append('onlyMine', filters.onlyMine.toString());
 
     const queryString = params.toString();
     const url = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;

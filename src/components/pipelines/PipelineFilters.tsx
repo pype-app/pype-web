@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
-  XMarkIcon
+  XMarkIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
 import { PipelineFilters } from '@/services/pipelineService';
+import { useAuthStore } from '@/store/auth';
+import { UserRole } from '@/types';
 
 interface PipelineFiltersProps {
   filters: PipelineFilters;
@@ -21,6 +24,11 @@ export default function PipelineFiltersComponent({
 }: PipelineFiltersProps) {
   const [search, setSearch] = useState(filters.search || '');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const user = useAuthStore((state) => state.user);
+
+  // Check if user is ADMIN or OWNER (can toggle onlyMine)
+  const canToggleOnlyMine = user?.role === UserRole.Admin || user?.role === UserRole.Owner;
+  const isUser = user?.role === UserRole.User;
 
   // Debounce search input
   useEffect(() => {
@@ -56,13 +64,15 @@ export default function PipelineFiltersComponent({
       search: undefined,
       status: undefined,
       tags: undefined,
+      onlyMine: undefined,
     });
   };
 
   const hasActiveFilters = !!(
     filters.search || 
     filters.status || 
-    (filters.tags && filters.tags.length > 0)
+    (filters.tags && filters.tags.length > 0) ||
+    filters.onlyMine
   );
 
   return (
@@ -98,6 +108,31 @@ export default function PipelineFiltersComponent({
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
+
+          {/* Only Mine toggle - only for ADMIN/OWNER */}
+          {canToggleOnlyMine && (
+            <button
+              type="button"
+              onClick={() => onFiltersChange({ onlyMine: !filters.onlyMine })}
+              disabled={loading}
+              className={`inline-flex items-center gap-x-1.5 px-3 py-2 text-sm font-semibold rounded-md shadow-sm disabled:opacity-50 transition-colors ${
+                filters.onlyMine
+                  ? 'bg-blue-600 text-white hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400'
+                  : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+              }`}
+            >
+              <UserCircleIcon className="-ml-0.5 h-5 w-5" aria-hidden="true" />
+              Only Mine
+            </button>
+          )}
+
+          {/* Info badge for USER role */}
+          {isUser && (
+            <div className="inline-flex items-center gap-x-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-md">
+              <UserCircleIcon className="-ml-0.5 h-5 w-5" aria-hidden="true" />
+              Your Pipelines
+            </div>
+          )}
           
           {/* Advanced filters toggle */}
           <button
@@ -113,7 +148,8 @@ export default function PipelineFiltersComponent({
                 {[
                   filters.search && 'search',
                   filters.status && 'status',
-                  filters.tags?.length && `${filters.tags.length} tags`
+                  filters.tags?.length && `${filters.tags.length} tags`,
+                  filters.onlyMine && 'only mine'
                 ].filter(Boolean).length}
               </span>
             )}
@@ -183,6 +219,11 @@ export default function PipelineFiltersComponent({
                   {filters.status && (
                     <span className="badge-green inline-flex items-center rounded-md px-2 py-1 text-xs font-medium">
                       Status: {filters.status}
+                    </span>
+                  )}
+                  {filters.onlyMine && (
+                    <span className="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200">
+                      Only Mine
                     </span>
                   )}
                   {filters.tags?.map((tag) => (
