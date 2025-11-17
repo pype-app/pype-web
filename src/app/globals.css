@@ -18,6 +18,18 @@
     --toast-bg: #1f2937;
     --toast-color: #f9fafb;
   }
+
+  /* Fix react-hot-toast container visual artifacts */
+  [data-rht-toaster] {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+  }
+
+  [data-rht-toaster]::before,
+  [data-rht-toaster]::after {
+    display: none !important;
+  }
 }
 
 @layer components {
