@@ -36,19 +36,6 @@ class ApiClient {
           config.headers['X-Tenant-Subdomain'] = 'default';
         }
         
-        // Debug log for development
-        if (process.env.NODE_ENV === 'development') {
-          console.log('API Request:', {
-            url: config.url,
-            fullUrl: `${config.baseURL}${config.url}`,
-            method: config.method,
-            hasToken: !!accessToken,
-            tenant: tenant?.subdomain || 'default',
-            headers: config.headers,
-            data: config.data ? JSON.stringify(config.data).substring(0, 500) : null,
-          });
-        }
-        
         return config;
       },
       (error) => {
@@ -83,9 +70,9 @@ class ApiClient {
             await this.refreshToken();
             return this.client(original);
           } catch (refreshError) {
-            console.error('Token refresh failed, logging out');
+            console.error('Session expired. Please login again.');
             useAuthStore.getState().logout();
-            window.location.href = '/login';
+            window.location.href = '/login?session=expired';
             return Promise.reject(refreshError);
           }
         }
