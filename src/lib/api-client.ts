@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { useAuthStore } from '@/store/auth';
+import logger from '@/utils/logger';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -36,19 +37,6 @@ class ApiClient {
           config.headers['X-Tenant-Subdomain'] = 'default';
         }
         
-        // Debug log for development
-        if (process.env.NODE_ENV === 'development') {
-          console.log('API Request:', {
-            url: config.url,
-            fullUrl: `${config.baseURL}${config.url}`,
-            method: config.method,
-            hasToken: !!accessToken,
-            tenant: tenant?.subdomain || 'default',
-            headers: config.headers,
-            data: config.data ? JSON.stringify(config.data).substring(0, 500) : null,
-          });
-        }
-        
         return config;
       },
       (error) => {
@@ -60,30 +48,32 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
-        // Debug log for development
-        if (process.env.NODE_ENV === 'development') {
-          console.error('API Error:', {
-            url: error.config?.url,
-            method: error.config?.method,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            message: error.response?.data?.error || error.message,
-            requestData: error.config?.data ? JSON.parse(error.config.data) : null,
-          });
-        }
+        logger.error('API Error:', {
+          url: error.config?.url,
+          method: error.config?.method,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.response?.data?.error || error.message,
+          requestData: error.config?.data ? JSON.parse(error.config.data) : null,
+        });
         
         const original = error.config;
         
-        if (error.response?.status === 401 && !original._retry) {
+        // Only try to refresh token on 401 errors, not on other errors
+        if (error.response?.status === 401 && !original._retry && original.url !== '/api/auth/refresh') {
           original._retry = true;
           
           try {
+            logger.debug('Attempting to refresh token...');
             await this.refreshToken();
+            logger.debug('Token refreshed successfully');
             return this.client(original);
+
           } catch (refreshError) {
+            logger.error('Session expired. Please login again.');
             useAuthStore.getState().logout();
-            window.location.href = '/login';
+            window.location.href = '/login?session=expired';
             return Promise.reject(refreshError);
           }
         }
@@ -94,19 +84,24 @@ class ApiClient {
   }
 
   private async refreshToken(): Promise<void> {
-    const { refreshToken } = useAuthStore.getState();
+    const { refreshToken, tenant } = useAuthStore.getState();
     
     if (!refreshToken) {
       throw new Error('No refresh token available');
     }
 
-    const response = await axios.post(`${this.baseURL}/api/auth/refresh`, {
-      refreshToken,
-    });
-
-    const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+    const response = await axios.post(
+      `${this.baseURL}/api/auth/refresh`,
+      { refreshToken },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-Subdomain': tenant?.subdomain || 'default',
+        },
+      }
+    );
     
-    // Calculate expiration time from expiresIn seconds
+    const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
     
     useAuthStore.getState().setTokens(accessToken, newRefreshToken, expiresAt);

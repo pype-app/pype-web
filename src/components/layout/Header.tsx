@@ -1,14 +1,14 @@
 'use client';
 
 import { Fragment } from 'react';
+import Link from 'next/link';
 import { Menu, Transition } from '@headlessui/react';
 import { 
   Bars3Icon, 
   BellIcon, 
   ChevronDownIcon,
   UserCircleIcon,
-  ArrowRightOnRectangleIcon,
-  Cog6ToothIcon
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '@/store/auth';
 import ThemeToggle from '@/components/ui/ThemeToggle';
@@ -84,7 +84,15 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
           <Menu as="div" className="relative">
             <Menu.Button className="-m-1.5 flex items-center p-1.5">
               <span className="sr-only">Open user menu</span>
-              <UserCircleIcon className="h-8 w-8 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+              {user?.profileImageData ? (
+                <img
+                  src={user.profileImageData}
+                  alt="Profile"
+                  className="h-8 w-8 rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-700"
+                />
+              ) : (
+                <UserCircleIcon className="h-8 w-8 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+              )}
               <span className="hidden lg:flex lg:items-center">
                 <span className="ml-4 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100" aria-hidden="true">
                   {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email || 'User'}
@@ -104,8 +112,8 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
               <Menu.Items className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 py-2 shadow-lg ring-1 ring-gray-900/5 dark:ring-gray-700/50 focus:outline-none">
                 <Menu.Item>
                   {({ active }) => (
-                    <a
-                      href="#"
+                    <Link
+                      href="/dashboard/profile"
                       className={classNames(
                         active ? 'bg-gray-50 dark:bg-gray-700' : '',
                         'flex items-center px-3 py-1 text-sm leading-6 text-gray-900 dark:text-gray-100'
@@ -113,21 +121,7 @@ export default function Header({ setSidebarOpen }: HeaderProps) {
                     >
                       <UserCircleIcon className="mr-3 h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
                       Your profile
-                    </a>
-                  )}
-                </Menu.Item>
-                <Menu.Item>
-                  {({ active }) => (
-                    <a
-                      href="#"
-                      className={classNames(
-                        active ? 'bg-gray-50 dark:bg-gray-700' : '',
-                        'flex items-center px-3 py-1 text-sm leading-6 text-gray-900 dark:text-gray-100'
-                      )}
-                    >
-                      <Cog6ToothIcon className="mr-3 h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
-                      Settings
-                    </a>
+                    </Link>
                   )}
                 </Menu.Item>
                 <Menu.Item>
