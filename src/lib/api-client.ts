@@ -36,6 +36,7 @@ class ApiClient {
           config.headers['X-Tenant-Subdomain'] = 'default';
         }
         
+        console.log(`${new Date().toISOString()} Request config url:`, config.url);
         return config;
       },
       (error) => {
@@ -67,10 +68,15 @@ class ApiClient {
           original._retry = true;
           
           try {
+            console.log(`${new Date().toISOString()} Attempting to refresh token...`);
             await this.refreshToken();
+            console.log(`${new Date().toISOString()} Token refreshed successfully.`);
             return this.client(original);
+
           } catch (refreshError) {
             console.error('Session expired. Please login again.');
+            console.log(`${new Date().toISOString()} Original request causing logout:`, original);
+            debugger;
             useAuthStore.getState().logout();
             window.location.href = '/login?session=expired';
             return Promise.reject(refreshError);
@@ -90,6 +96,10 @@ class ApiClient {
     }
 
     // Use axios directly but add required headers (bypass interceptors to avoid infinite loop)
+    console.log(`${new Date().toISOString()} Refreshing token with refreshToken:`, refreshToken);
+    console.log(`${new Date().toISOString()} Tenant during refresh:`, tenant);
+
+    console.log(`${new Date().toISOString()} Starting token refresh request and awaiting response...`);
     const response = await axios.post(
       `${this.baseURL}/api/auth/refresh`,
       { refreshToken },
@@ -100,17 +110,23 @@ class ApiClient {
         },
       }
     );
-
+    console.log(`${new Date().toISOString()} Token refresh response received:`, response.data);
     const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
     
     // Calculate expiration time from expiresIn seconds
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
-    
+    console.log(`${new Date().toISOString()} New accessToken received:`, accessToken);
     useAuthStore.getState().setTokens(accessToken, newRefreshToken, expiresAt);
   }
 
   // Generic methods
   async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    console.log(`${new Date().toISOString()} ApiClient Get called for URL:`, url);
+    console.log(`${new Date().toISOString()} AccessToken and RefreshToken in store:`, {
+      accessToken: useAuthStore.getState().accessToken,
+      refreshToken: useAuthStore.getState().refreshToken,
+    });
+    
     const response: AxiosResponse<T> = await this.client.get(url, config);
     return response.data;
   }
