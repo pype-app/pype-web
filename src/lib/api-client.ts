@@ -96,15 +96,23 @@ class ApiClient {
   }
 
   private async refreshToken(): Promise<void> {
-    const { refreshToken } = useAuthStore.getState();
+    const { refreshToken, tenant } = useAuthStore.getState();
     
     if (!refreshToken) {
       throw new Error('No refresh token available');
     }
 
-    const response = await axios.post(`${this.baseURL}/api/auth/refresh`, {
-      refreshToken,
-    });
+    // Use axios directly but add required headers (bypass interceptors to avoid infinite loop)
+    const response = await axios.post(
+      `${this.baseURL}/api/auth/refresh`,
+      { refreshToken },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-Subdomain': tenant?.subdomain || 'default',
+        },
+      }
+    );
 
     const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
     
