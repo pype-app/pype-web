@@ -75,13 +75,15 @@ class ApiClient {
         
         const original = error.config;
         
-        if (error.response?.status === 401 && !original._retry) {
+        // Only try to refresh token on 401 errors, not on other errors
+        if (error.response?.status === 401 && !original._retry && original.url !== '/api/auth/refresh') {
           original._retry = true;
           
           try {
             await this.refreshToken();
             return this.client(original);
           } catch (refreshError) {
+            console.error('Token refresh failed, logging out');
             useAuthStore.getState().logout();
             window.location.href = '/login';
             return Promise.reject(refreshError);

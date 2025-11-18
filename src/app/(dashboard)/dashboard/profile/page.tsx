@@ -32,22 +32,35 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(false);
     const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
     const [loadingTimeline, setLoadingTimeline] = useState(false);
+    const [timelineLoaded, setTimelineLoaded] = useState(false);
 
     // Load user data on mount
     useEffect(() => {
-        refreshUserData();
-    }, []);
+        const initData = async () => {
+            console.log('ProfilePage: Loading user data...');
+            await refreshUserData();
+            console.log('ProfilePage: User data loaded');
+        };
+        initData();
+    }, [refreshUserData]);
 
-    // Load timeline when user data is available
+    // Load timeline when user data is available (only once)
     useEffect(() => {
-        if (user) {
+        console.log('ProfilePage: user changed, user=', user, 'timelineLoaded=', timelineLoaded);
+        if (user && !timelineLoaded) {
+            console.log('ProfilePage: Loading timeline...');
             loadTimelineData();
+            setTimelineLoaded(true);
         }
-    }, [user]);
+    }, [user, timelineLoaded]);
 
     const loadTimelineData = async () => {
-        if (!user) return;
+        if (!user) {
+            console.log('ProfilePage: loadTimelineData called but user is null');
+            return;
+        }
         
+        console.log('ProfilePage: Starting timeline data load...');
         setLoadingTimeline(true);
         try {
             // Fetch audit logs for user activities
