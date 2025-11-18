@@ -92,12 +92,6 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
             error: null,
           });
-          console.log(`${new Date().toISOString()} User logged in:`, normalizedUser);
-          console.log(`${new Date().toISOString()} AccessToken and RefreshToken in store after login:`, {
-            accessToken,
-            refreshToken,
-          });
-          console.log(`${new Date().toISOString()} expiration time set at:`, expiresAt);
 
           // Save last used tenant to localStorage
           if (normalizedUser?.tenant?.subdomain && typeof window !== 'undefined') {

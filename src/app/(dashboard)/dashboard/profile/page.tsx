@@ -37,18 +37,14 @@ export default function ProfilePage() {
     // Load user data on mount
     useEffect(() => {
         const initData = async () => {
-            console.log('ProfilePage: Loading user data...');
             await refreshUserData();
-            console.log('ProfilePage: User data loaded');
         };
         initData();
     }, [refreshUserData]);
 
     // Load timeline when user data is available (only once)
     useEffect(() => {
-        console.log('ProfilePage: user changed, user=', user, 'timelineLoaded=', timelineLoaded);
         if (user && !timelineLoaded) {
-            console.log('ProfilePage: Loading timeline...');
             loadTimelineData();
             setTimelineLoaded(true);
         }
@@ -56,11 +52,9 @@ export default function ProfilePage() {
 
     const loadTimelineData = async () => {
         if (!user) {
-            console.log('ProfilePage: loadTimelineData called but user is null');
             return;
         }
         
-        console.log('ProfilePage: Starting timeline data load...');
         setLoadingTimeline(true);
         try {
             // Fetch audit logs for user activities
