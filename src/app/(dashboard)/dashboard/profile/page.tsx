@@ -33,13 +33,21 @@ export default function ProfilePage() {
     const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
     const [loadingTimeline, setLoadingTimeline] = useState(false);
 
-    // Load user data and timeline on mount
+    // Load user data on mount
     useEffect(() => {
         refreshUserData();
-        loadTimelineData();
     }, []);
 
+    // Load timeline when user data is available
+    useEffect(() => {
+        if (user) {
+            loadTimelineData();
+        }
+    }, [user]);
+
     const loadTimelineData = async () => {
+        if (!user) return;
+        
         setLoadingTimeline(true);
         try {
             // Fetch audit logs for user activities
@@ -53,7 +61,7 @@ export default function ProfilePage() {
             const events: TimelineEvent[] = [];
 
             // Add account creation
-            if (user?.createdAt) {
+            if (user.createdAt) {
                 events.push({
                     id: 'account_created',
                     type: 'account_created',
@@ -64,7 +72,7 @@ export default function ProfilePage() {
             }
 
             // Add last login
-            if (user?.lastLoginAt) {
+            if (user.lastLoginAt) {
                 events.push({
                     id: 'last_login',
                     type: 'login',
@@ -118,7 +126,7 @@ export default function ProfilePage() {
                     }
 
                     // Profile activities
-                    if (entityType === 'user' && log.performedByUserId === user?.id) {
+                    if (entityType === 'user' && log.performedByUserId === user.id) {
                         if (action.includes('update')) {
                             events.push({
                                 id: `log_${log.id}`,
