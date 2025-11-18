@@ -124,50 +124,63 @@ export default function ActivityTimeline({ events }: ActivityTimelineProps) {
                   />
                 ) : null}
                 
-                <div className={`relative flex items-start ${isLeft ? 'justify-end' : 'justify-start'}`}>
-                  {/* Content on left side */}
-                  {isLeft && (
-                    <div className="flex-1 pr-8 text-right">
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {event.title}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                        {formatTimestamp(event.timestamp)}
-                      </p>
-                      {event.description && (
-                        <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                          <p>{event.description}</p>
+                <div className={`relative flex items-center gap-0`}>
+                  {/* Left side: text right-aligned + icon right-aligned */}
+                  {isLeft ? (
+                    <>
+                      <div className="flex-1 pr-6 flex flex-col items-end text-right">
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {event.title}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Center icon */}
-                  <div className="relative flex items-center justify-center flex-shrink-0">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${getEventColor(event.type)} text-white ring-4 ring-white dark:ring-gray-800`}>
-                      {event.icon || getEventIcon(event.type)}
-                    </div>
-                  </div>
-                  
-                  {/* Content on right side */}
-                  {!isLeft && (
-                    <div className="flex-1 pl-8 text-left">
-                      <div className="text-sm">
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {event.title}
-                        </span>
+                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                          {formatTimestamp(event.timestamp)}
+                        </p>
+                        {event.description && (
+                          <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                            <p>{event.description}</p>
+                          </div>
+                        )}
                       </div>
-                      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                        {formatTimestamp(event.timestamp)}
-                      </p>
-                      {event.description && (
-                        <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                          <p>{event.description}</p>
+                      
+                      {/* Icon */}
+                      <div className="relative flex items-center justify-center flex-shrink-0">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${getEventColor(event.type)} text-white ring-4 ring-white dark:ring-gray-800`}>
+                          {event.icon || getEventIcon(event.type)}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                      
+                      <div className="flex-1"></div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex-1"></div>
+                      
+                      {/* Icon */}
+                      <div className="relative flex items-center justify-center flex-shrink-0">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${getEventColor(event.type)} text-white ring-4 ring-white dark:ring-gray-800`}>
+                          {event.icon || getEventIcon(event.type)}
+                        </div>
+                      </div>
+                      
+                      {/* Right side: icon left-aligned + text left-aligned */}
+                      <div className="flex-1 pl-6 flex flex-col items-start text-left">
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {event.title}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                          {formatTimestamp(event.timestamp)}
+                        </p>
+                        {event.description && (
+                          <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                            <p>{event.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
