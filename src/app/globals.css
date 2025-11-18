@@ -138,4 +138,13 @@
   .badge-gray {
     @apply bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200;
   }
+
+  /* Custom spacing for timeline component - creates balanced layout with icons positioned away from center line */
+  .mr-19 {
+    margin-right: 4.75rem;
+  }
+
+  .ml-19 {
+    margin-left: 4.75rem;
+  }  
 }

@@ -124,7 +124,7 @@ export default function ActivityTimeline({ events }: ActivityTimelineProps) {
                   />
                 ) : null}
                 
-                <div className={`relative flex items-center`}>
+                <div className={`relative flex items-center gap-2 ${isLeft ? 'mr-19' : 'ml-19'}`}>
                   {/* Left side: text right-aligned + icon right-aligned */}
                   {isLeft ? (
                     <>
@@ -145,7 +145,7 @@ export default function ActivityTimeline({ events }: ActivityTimelineProps) {
                       </div>
                       
                       {/* Icon with spacing from center line */}
-                      <div className="relative flex items-center justify-center flex-shrink-0 mr-3">
+                      <div className="relative flex items-center justify-center flex-shrink-0">
                         <div className={`flex h-10 w-10 items-center justify-center rounded-full ${getEventColor(event.type)} text-white ring-4 ring-white dark:ring-gray-800`}>
                           {event.icon || getEventIcon(event.type)}
                         </div>
@@ -158,7 +158,7 @@ export default function ActivityTimeline({ events }: ActivityTimelineProps) {
                       <div className="flex-1"></div>
                       
                       {/* Icon with spacing from center line */}
-                      <div className="relative flex items-center justify-center flex-shrink-0 ml-3">
+                      <div className="relative flex items-center justify-center flex-shrink-0">
                         <div className={`flex h-10 w-10 items-center justify-center rounded-full ${getEventColor(event.type)} text-white ring-4 ring-white dark:ring-gray-800`}>
                           {event.icon || getEventIcon(event.type)}
                         </div>
