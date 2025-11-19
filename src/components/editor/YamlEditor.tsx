@@ -86,11 +86,19 @@ export default function YamlEditor({
             const stepNum = index + 1;
             let hasValidStepType = false;
             
-            // Check if the step has at least one valid type (source, transform, validate, sink)
+            // Check if the step has at least one valid type (source, transform, validate, sink, auth)
             if (step.source) {
               hasValidStepType = true;
               if (!step.source.type) {
                 errors.push(`Step ${stepNum} source must have a "type" field`);
+                isValid = false;
+              }
+            }
+            
+            if (step.auth) {
+              hasValidStepType = true;
+              if (!step.auth.type) {
+                errors.push(`Step ${stepNum} auth must have a "type" field`);
                 isValid = false;
               }
             }
@@ -122,7 +130,7 @@ export default function YamlEditor({
             
             // Se não tem nenhum tipo válido, é erro
             if (!hasValidStepType) {
-              errors.push(`Step ${stepNum} must have one of: source, transform, validate, or sink`);
+              errors.push(`Step ${stepNum} must have one of: source, transform, validate, sink, or auth`);
               isValid = false;
             }
           });
