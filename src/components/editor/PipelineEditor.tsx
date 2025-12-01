@@ -43,7 +43,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
     try {
       setIsLoading(true);
       const pipeline = await pipelineService.getPipeline(id);
-      
+
       // Carregar apenas o YAML - informações básicas serão extraídas do YAML
       setYamlContent(pipeline.yamlDefinition);
     } catch (error) {
@@ -76,7 +76,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
   const extractDataFromYaml = () => {
     try {
       const parsedYaml = yaml.load(yamlContent) as any;
-      
+
       return {
         name: parsedYaml.name || parsedYaml.pipeline || 'Unnamed Pipeline',
         description: parsedYaml.description || '',
@@ -126,14 +126,14 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
       router.push('/dashboard/pipelines');
     } catch (error: any) {
       console.error('Erro ao salvar pipeline:', error);
-      
+
       let errorMessage = 'Erro desconhecido';
-      
+
       if (error.response) {
         // Erro da API com resposta
         const status = error.response.status;
         const data = error.response.data;
-        
+
         if (status === 400) {
           // Bad Request - dados inválidos
           if (data.errors && Array.isArray(data.errors)) {
@@ -161,7 +161,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
         // Outro tipo de erro
         errorMessage = error.message || 'Erro desconhecido';
       }
-      
+
       toast.error(`Erro ao salvar pipeline: ${errorMessage}`);
     } finally {
       setIsSaving(false);
@@ -236,20 +236,27 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
             <h2 className="text-lg font-medium text-primary">
               YAML Definition
             </h2>
-            
-            <div className="flex items-center space-x-2">
+
+            {/* Status do YAML */}
+            <div className="justify-end">
+              <div className="text-sm text-muted">
+                {isValidYaml ? '✅ Valid YAML' : '❌ YAML with errors'}
+              </div>
+            </div>
+
+            {/* <div className="flex items-center space-x-2">
               <CodeBracketIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
               {uploadedFileName && (
                 <span className="text-sm text-muted">
                   Arquivo: {uploadedFileName}
                 </span>
               )}
-            </div>
+            </div> */}
           </div>
 
           <div className="card-body">
             {/* Templates e Upload */}
-            <div className="mb-4 space-y-4">
+            {/* <div className="mb-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-secondary mb-2">
                   Templates or Upload
@@ -274,7 +281,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
                 <FileUpload onFileContent={handleFileUpload} />
               </div>
-            </div>
+            </div> */}
 
             {/* Editor */}
             <YamlEditor
@@ -294,12 +301,6 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
               />
             </div>
 
-            {/* Status do YAML */}
-            <div className="mt-4 flex justify-end">
-              <div className="text-sm text-muted">
-                {isValidYaml ? '✅ Valid YAML' : '❌ YAML with errors'}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -312,7 +313,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
           >
             Cancel
           </button>
-          
+
           <button
             type="button"
             onClick={handleSave}
