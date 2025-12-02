@@ -35,7 +35,7 @@ ENV NODE_ENV=production \
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --frozen-lockfile --only=production
+RUN npm ci --omit=dev
 
 # Copy built application from builder
 COPY --from=builder /app/.next/standalone ./
