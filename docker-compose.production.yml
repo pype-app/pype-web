@@ -1,0 +1,27 @@
+name: pype-web
+
+services:
+  pype-web:
+    image: ghcr.io/daniel-buona/pypie/pype-web:${IMAGE_TAG:-latest}
+    container_name: pype-web
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+      PYPE_API_URL: ${PYPE_API_URL:-http://pype-admin:8080}
+    networks:
+      - pype-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${PORT:-3000}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  pype-network:
+    external: true

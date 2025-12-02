@@ -1,49 +1,62 @@
 # Scripts - Pype Web
 
-Esta pasta contém scripts de automação e utilitários do frontend do Pype.
+Scripts de automação organizados por categoria.
 
-## 🔧 Scripts Disponíveis
+## 📁 Estrutura
 
-_Futuramente, scripts de automação serão adicionados aqui._
+### 🐳 [docker/](./docker/)
+Scripts para gerenciamento de containers Docker
 
-### Planejado
+- **[login.ps1](./docker/login.ps1)** - Autenticação no GHCR
+- **[pull-and-run.ps1](./docker/pull-and-run.ps1)** - Baixar e executar container individual
+- **[manage.ps1](./docker/manage.ps1)** - Gerenciar containers (logs, restart, stop)
 
-- Scripts de build e deploy
-- Utilitários de desenvolvimento
-- Scripts de migração
-- Ferramentas de teste e qualidade
+### 🚀 [production/](./production/)
+Scripts para deploy em produção
 
-## 💡 Como Usar
+- **[up.ps1](./production/up.ps1)** - Iniciar aplicação em produção (docker-compose)
+- **[down.ps1](./production/down.ps1)** - Parar aplicação em produção
 
-Para adicionar novos scripts:
-1. Crie um arquivo com extensão apropriada (`.ps1`, `.sh`, `.js`, etc.)
-2. Adicione comentários explicativos no início
-3. Atualize este README com instruções de uso
-4. Faça commit com mensagem descritiva
+### 🔧 [utils/](./utils/)
+Scripts utilitários e ferramentas auxiliares
 
-## 📝 Scripts do Package.json
+- **[reorganize-docs.ps1](./utils/reorganize-docs.ps1)** - Script de reorganização de documentação
 
-Os scripts principais já estão configurados no `package.json`:
+## 🚀 Uso Rápido
 
-```bash
-# Desenvolvimento
-npm run dev
+### Deploy em Produção (Recomendado)
 
-# Build
-npm run build
+```powershell
+# Iniciar aplicação
+.\production\up.ps1 -Pull
 
-# Produção
-npm start
-
-# Lint
-npm run lint
-
-# Testes
-npm test
+# Parar aplicação
+.\production\down.ps1
 ```
 
-## 🔗 Links Úteis
+### Gerenciamento Individual de Container
 
-- [README Principal](../README.md)
-- [Scripts do Pype Admin](../../pype-admin/scripts/README.md)
-- [Scripts do Pype Landing](../../pype-landing/scripts/README.md)
+```powershell
+# Login no GHCR (se necessário)
+.\docker\login.ps1
+
+# Baixar e executar container
+.\docker\pull-and-run.ps1
+
+# Gerenciar container
+.\docker\manage.ps1 -Action logs -Follow
+.\docker\manage.ps1 -Action restart
+.\docker\manage.ps1 -Action status
+```
+
+## 📖 Documentação Detalhada
+
+Para guias completos, consulte:
+- [Deployment Guide](../docs/deployment/PRODUCTION.md)
+- [Scripts Guide](../docs/deployment/scripts-guide.md)
+- [Docker Guide](../docs/deployment/DOCKER.md)
+
+## 🔗 Links Relacionados
+
+- [Documentação Principal](../docs/)
+- [README do Projeto](../README.md)

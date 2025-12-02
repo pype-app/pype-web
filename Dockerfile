@@ -25,6 +25,12 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Environment variables with default values
+ENV NODE_ENV=production \
+    PORT=3000 \
+    PYPE_API_URL=http://localhost:8080 \
+    HOSTNAME=0.0.0.0
+
 # Copy package files
 COPY package*.json ./
 
@@ -36,12 +42,12 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Health check
+# Health check (using PORT environment variable)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 3000) + '/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
-# Expose port
+# Expose port - use default 3000, but will be overridden by ENV at runtime
 EXPOSE 3000
 
-# Start application
+# Start application - Next.js standalone will read PORT env variable
 CMD ["node", "server.js"]

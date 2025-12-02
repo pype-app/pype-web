@@ -254,6 +254,19 @@ O design é completamente responsivo usando:
 - [x] Dark mode completo
 - [x] Layout responsivo
 
+## 📚 Documentação
+
+A documentação completa está organizada em [`docs/`](./docs/):
+
+- **[Deployment](./docs/deployment/)** - Guias de Docker e produção
+- **[Development](./docs/development/)** - Guias para desenvolvedores (em breve)
+- **[Guides](./docs/guides/)** - Tutoriais práticos (em breve)
+
+### Links Rápidos
+- 🚀 [Deploy em Produção](./docs/deployment/PRODUCTION.md)
+- 🐳 [Configuração Docker](./docs/deployment/DOCKER.md)
+- 🔧 [Scripts de Automação](./docs/deployment/scripts-guide.md)
+
 ## 🤝 Contribuição
 
 1. Clone o repositório

@@ -7,18 +7,18 @@ services:
       dockerfile: Dockerfile
     container_name: pype-web
     ports:
-      - "${PORT:-3080}:3080"
+      - "${PORT:-3000}:${PORT:-3000}"
     env_file:
       - .env
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${PORT:-3080}
+      PORT: ${PORT:-3000}
       PYPE_API_URL: ${PYPE_API_URL:-http://pype-admin:8080}
     networks:
       - pype-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://pype-web:${PORT:-3080}/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${PORT:-3000}/health"]
       interval: 30s
       timeout: 10s
       retries: 3
