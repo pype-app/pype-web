@@ -31,13 +31,8 @@ ENV NODE_ENV=production \
     PYPE_API_URL=http://localhost:8080 \
     HOSTNAME=0.0.0.0
 
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies only
-RUN npm ci --omit=dev
-
 # Copy built application from builder
+# Next.js standalone already includes all necessary dependencies
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
