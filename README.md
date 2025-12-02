@@ -93,11 +93,25 @@ npm run type-check
 
 ### Variáveis de Ambiente
 
-Crie um arquivo `.env.local`:
+⚠️ **Importante**: Este projeto usa **runtime configuration** para permitir que variáveis de ambiente sejam alteradas sem rebuild.
+
+Crie um arquivo `.env` para desenvolvimento local:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000
+PYPE_API_URL=http://localhost:8080
+NODE_ENV=development
+PORT=3000
 ```
+
+Para entender como configurar variáveis de ambiente em diferentes ambientes (Docker, Azure, Kubernetes, on-premise), consulte:
+
+📖 **[Runtime Configuration Guide](./RUNTIME_CONFIG.md)**
+
+Este guia contém:
+- Como funcionam as variáveis de ambiente em runtime
+- Exemplos para Docker Compose, Azure Web App, Kubernetes
+- Configuração para ambientes on-premise
+- Troubleshooting e segurança
 
 ## 📧 Configuração de Email (Backend)
 

@@ -2,11 +2,61 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { useAuthStore } from '@/store/auth';
 import logger from '@/utils/logger';
 
+// Runtime configuration cache
+let runtimeConfig: { PYPE_API_URL: string } | null = null;
+let configPromise: Promise<{ PYPE_API_URL: string }> | null = null;
+
+/**
+ * Fetch runtime configuration from the server
+ * This allows the API URL to be set at container runtime, not build time
+ */
+async function fetchRuntimeConfig(): Promise<{ PYPE_API_URL: string }> {
+  if (runtimeConfig) {
+    return runtimeConfig;
+  }
+
+  if (configPromise) {
+    return configPromise;
+  }
+
+  configPromise = (async () => {
+    try {
+      // Fetch config from our Next.js API route
+      const response = await fetch('/api/config', {
+        cache: 'no-store',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch config: ${response.status}`);
+      }
+      
+      const config = await response.json();
+      runtimeConfig = config;
+      logger.debug('Runtime config loaded:', config);
+      return config;
+    } catch (error) {
+      logger.warn('Failed to fetch runtime config, using fallback:', error);
+      // Fallback to build-time env var
+      const fallbackConfig = {
+        PYPE_API_URL: process.env.PYPE_API_URL || 'http://localhost:8080',
+      };
+      runtimeConfig = fallbackConfig;
+      return fallbackConfig;
+    } finally {
+      configPromise = null;
+    }
+  })();
+
+  return configPromise;
+}
+
 class ApiClient {
   private client: AxiosInstance;
   private baseURL: string;
+  private initialized: Promise<void>;
 
   constructor() {
+    // Initial baseURL - will be updated after runtime config is loaded
     this.baseURL = process.env.PYPE_API_URL || 'http://localhost:8080';
     
     this.client = axios.create({
@@ -17,7 +67,25 @@ class ApiClient {
       },
     });
 
+    // Initialize with runtime config
+    this.initialized = this.initializeWithRuntimeConfig();
+
     this.setupInterceptors();
+  }
+
+  private async initializeWithRuntimeConfig(): Promise<void> {
+    try {
+      const config = await fetchRuntimeConfig();
+      this.baseURL = config.PYPE_API_URL;
+      this.client.defaults.baseURL = config.PYPE_API_URL;
+      logger.debug('API Client initialized with baseURL:', this.baseURL);
+    } catch (error) {
+      logger.error('Failed to initialize API client with runtime config:', error);
+    }
+  }
+
+  private async ensureInitialized(): Promise<void> {
+    await this.initialized;
   }
 
   private setupInterceptors() {
@@ -109,32 +177,38 @@ class ApiClient {
 
   // Generic methods
   async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    await this.ensureInitialized();
     const response: AxiosResponse<T> = await this.client.get(url, config);
     return response.data;
   }
 
   async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    await this.ensureInitialized();
     const response: AxiosResponse<T> = await this.client.post(url, data, config);
     return response.data;
   }
 
   async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    await this.ensureInitialized();
     const response: AxiosResponse<T> = await this.client.put(url, data, config);
     return response.data;
   }
 
   async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    await this.ensureInitialized();
     const response: AxiosResponse<T> = await this.client.patch(url, data, config);
     return response.data;
   }
 
   async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    await this.ensureInitialized();
     const response: AxiosResponse<T> = await this.client.delete(url, config);
     return response.data;
   }
 
   // Upload file method
   async upload<T = any>(url: string, file: File, onProgress?: (progress: number) => void): Promise<T> {
+    await this.ensureInitialized();
     const formData = new FormData();
     formData.append('file', file);
 
@@ -155,7 +229,8 @@ class ApiClient {
   }
 
   // WebSocket connection helper
-  createWebSocketUrl(path: string): string {
+  async createWebSocketUrl(path: string): Promise<string> {
+    await this.ensureInitialized();
     const wsProtocol = this.baseURL.startsWith('https') ? 'wss' : 'ws';
     const baseWsUrl = this.baseURL.replace(/^https?/, wsProtocol);
     return `${baseWsUrl}${path}`;
