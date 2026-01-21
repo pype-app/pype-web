@@ -1,6 +1,6 @@
 'use client';
 
-import { 
+import {
   ChartBarIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { analyticsService, TimePeriod } from '@/services/analyticsService';
+import { CardSkeleton } from '@/components/ui/skeletons';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
@@ -117,7 +118,7 @@ export default function AnalyticsPage() {
       {/* Time period selector */}
       <div className="flex items-center gap-4">
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Time Period:</label>
-        <select 
+        <select
           value={period}
           onChange={(e) => setPeriod(e.target.value as TimePeriod)}
           className="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 dark:text-white bg-white dark:bg-gray-700 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-blue-600 dark:focus:ring-blue-500 sm:text-sm sm:leading-6"
@@ -133,59 +134,52 @@ export default function AnalyticsPage() {
       {loading && !overview ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 overflow-hidden shadow dark:shadow-lg rounded-lg animate-pulse">
-              <div className="p-5">
-                <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-700/50 px-5 py-3">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-              </div>
-            </div>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : (
         <div className={`grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
           {metrics.map((metric) => (
-          <div key={metric.name} className="bg-white dark:bg-gray-800 overflow-hidden shadow dark:shadow-lg rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ChartBarIcon className="h-6 w-6 text-gray-400 dark:text-gray-500" aria-hidden="true" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{metric.name}</dt>
-                    <dd>
-                      <div className="text-lg font-medium text-gray-900 dark:text-white">{metric.value}</div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700/50 px-5 py-3">
-              <div className="text-sm">
+            <div key={metric.name} className="bg-white dark:bg-gray-800 overflow-hidden shadow dark:shadow-lg rounded-lg">
+              <div className="p-5">
                 <div className="flex items-center">
-                  {metric.changeType === 'positive' ? (
-                    <ArrowTrendingUpIcon className="h-4 w-4 text-green-500 dark:text-green-400 mr-1" />
-                  ) : metric.changeType === 'negative' ? (
-                    <ArrowTrendingDownIcon className="h-4 w-4 text-red-500 dark:text-red-400 mr-1" />
-                  ) : null}
-                  {metric.change && (
-                    <span
-                      className={classNames(
-                        metric.changeType === 'positive' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
-                        'font-medium'
-                      )}
-                    >
-                      {metric.change}
-                    </span>
-                  )}
-                  <span className="text-gray-500 dark:text-gray-400 ml-1">{metric.period}</span>
+                  <div className="flex-shrink-0">
+                    <ChartBarIcon className="h-6 w-6 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{metric.name}</dt>
+                      <dd>
+                        <div className="text-lg font-medium text-gray-900 dark:text-white">{metric.value}</div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-700/50 px-5 py-3">
+                <div className="text-sm">
+                  <div className="flex items-center">
+                    {metric.changeType === 'positive' ? (
+                      <ArrowTrendingUpIcon className="h-4 w-4 text-green-500 dark:text-green-400 mr-1" />
+                    ) : metric.changeType === 'negative' ? (
+                      <ArrowTrendingDownIcon className="h-4 w-4 text-red-500 dark:text-red-400 mr-1" />
+                    ) : null}
+                    {metric.change && (
+                      <span
+                        className={classNames(
+                          metric.changeType === 'positive' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+                          'font-medium'
+                        )}
+                      >
+                        {metric.change}
+                      </span>
+                    )}
+                    <span className="text-gray-500 dark:text-gray-400 ml-1">{metric.period}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
         </div>
       )}
 
@@ -220,14 +214,14 @@ export default function AnalyticsPage() {
                     // Minimum 8% height so bar is always visible
                     const height = Math.max(heightPercent, 8);
                     const date = new Date(trend.date);
-                    const label = period === '24h' 
+                    const label = period === '24h'
                       ? date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
                       : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                    
+
                     return (
                       <div key={index} className="flex-1 flex flex-col items-center justify-end h-full group">
                         <div className="relative w-full">
-                          <div 
+                          <div
                             className="w-full bg-blue-500 dark:bg-blue-400 rounded-t transition-all group-hover:bg-blue-600 dark:group-hover:bg-blue-300"
                             style={{ height: `${height}%` }}
                             title={`${trend.totalExecutions} executions (${trend.successRate.toFixed(1)}% success)`}
@@ -278,7 +272,7 @@ export default function AnalyticsPage() {
                   <line x1="0" y1="100" x2="400" y2="100" stroke="currentColor" strokeWidth="1" className="text-gray-200 dark:text-gray-700" strokeDasharray="4" />
                   <line x1="0" y1="150" x2="400" y2="150" stroke="currentColor" strokeWidth="1" className="text-gray-200 dark:text-gray-700" strokeDasharray="4" />
                   <line x1="0" y1="200" x2="400" y2="200" stroke="currentColor" strokeWidth="1" className="text-gray-300 dark:text-gray-600" />
-                  
+
                   {/* Line chart */}
                   {trends.length > 1 ? (
                     <polyline
@@ -293,7 +287,7 @@ export default function AnalyticsPage() {
                       className="text-green-500 dark:text-green-400"
                     />
                   ) : null}
-                  
+
                   {/* Data points */}
                   {trends.map((trend, index) => {
                     const x = trends.length > 1 ? (index / (trends.length - 1)) * 400 : 200;
@@ -312,7 +306,7 @@ export default function AnalyticsPage() {
                     );
                   })}
                 </svg>
-                
+
                 {/* Y-axis labels */}
                 <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>100%</span>
@@ -415,7 +409,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               ) : null}
-              
+
               {overview.durationChange < 0 ? (
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
@@ -439,7 +433,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               ) : null}
-              
+
               {topPipelines.length > 0 && (
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
@@ -452,7 +446,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               )}
-              
+
               {overview.failedExecutions > 0 && (
                 <div className="flex items-start">
                   <div className="flex-shrink-0">

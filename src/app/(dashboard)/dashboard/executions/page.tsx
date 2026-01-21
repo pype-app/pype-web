@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
+import {
   MagnifyingGlassIcon,
   FunnelIcon,
   EyeIcon,
@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import apiClient from '@/lib/api-client';
 import { useDebounce } from '@/hooks/useDebounce';
+import { PageSkeleton } from '@/components/ui/skeletons';
 
 interface PipelineExecution {
   id: string;
@@ -66,11 +67,11 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function LogModal({ 
-  execution, 
-  isOpen, 
-  onClose 
-}: { 
+function LogModal({
+  execution,
+  isOpen,
+  onClose
+}: {
   execution: PipelineExecution | null;
   isOpen: boolean;
   onClose: () => void;
@@ -86,7 +87,7 @@ function LogModal({
 
   const fetchLogs = async () => {
     if (!execution?.id) return;
-    
+
     try {
       setLoading(true);
       const result = await apiClient.get(`/api/logs/execution/${execution.id}`);
@@ -116,7 +117,7 @@ function LogModal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity dark:bg-gray-900 dark:bg-opacity-75" onClick={onClose}></div>
-        
+
         <div className="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:p-6">
           <div className="sm:flex sm:items-start">
             <div className="w-full">
@@ -249,11 +250,11 @@ export default function ExecutionsPage() {
 
   const formatDuration = (durationMs?: number) => {
     if (!durationMs) return 'N/A';
-    
+
     const seconds = Math.floor(durationMs / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
     } else if (minutes > 0) {
@@ -268,13 +269,13 @@ export default function ExecutionsPage() {
   };
 
   const filteredExecutions = executions.filter(execution => {
-    const matchesSearch = !debouncedSearch || 
+    const matchesSearch = !debouncedSearch ||
       execution.pipelineName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       execution.id.toLowerCase().includes(debouncedSearch.toLowerCase());
-    
+
     const matchesStatus = !statusFilter || execution.status === statusFilter;
     const matchesPipeline = !pipelineFilter || execution.pipelineName === pipelineFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPipeline;
   });
 
@@ -302,19 +303,7 @@ export default function ExecutionsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-8"></div>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton layout="list" />;
   }
 
   return (
@@ -345,9 +334,9 @@ export default function ExecutionsPage() {
             />
           </div>
         </div>
-        
+
         <div className="flex gap-2">
-          <select 
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-blue-600 dark:focus:ring-blue-500 sm:text-sm sm:leading-6"
@@ -359,8 +348,8 @@ export default function ExecutionsPage() {
             <option value="Scheduled">Scheduled</option>
             <option value="Cancelled">Cancelled</option>
           </select>
-          
-          <select 
+
+          <select
             value={pipelineFilter}
             onChange={(e) => setPipelineFilter(e.target.value)}
             className="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-blue-600 dark:focus:ring-blue-500 sm:text-sm sm:leading-6"
@@ -370,7 +359,7 @@ export default function ExecutionsPage() {
               <option key={name} value={name}>{name}</option>
             ))}
           </select>
-          
+
           <button
             type="button"
             onClick={refreshExecutions}
@@ -394,7 +383,7 @@ export default function ExecutionsPage() {
           <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
             {filteredExecutions.map((execution) => (
               <li key={execution.id}>
-                  <div className="px-4 py-4 sm:px-6">
+                <div className="px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
@@ -452,7 +441,7 @@ export default function ExecutionsPage() {
                         <EyeIcon className="h-3 w-3 mr-1" />
                         View Logs
                       </button>
-                      
+
                       {execution.status === 'Running' && (
                         <button
                           type="button"
@@ -463,7 +452,7 @@ export default function ExecutionsPage() {
                           Stop
                         </button>
                       )}
-                      
+
                       {(execution.status === 'Failed' || execution.status === 'Success') && (
                         <button
                           type="button"
@@ -476,7 +465,7 @@ export default function ExecutionsPage() {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
                     <div>
                       <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Duration</dt>
@@ -505,7 +494,7 @@ export default function ExecutionsPage() {
       </div>
 
       {/* Log Modal */}
-      <LogModal 
+      <LogModal
         execution={selectedExecution}
         isOpen={showLogsModal}
         onClose={() => {

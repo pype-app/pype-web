@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { MetricCardProps } from '@/types/dashboard';
+import { CardSkeleton } from '@/components/ui/skeletons';
 
 const TrendIndicator = React.memo(function TrendIndicator({ trend }: { trend: MetricCardProps['trend'] }) {
   if (!trend) return null;
@@ -8,7 +9,7 @@ const TrendIndicator = React.memo(function TrendIndicator({ trend }: { trend: Me
   const { value, isPositive, label } = trend;
   const TrendIcon = isPositive ? ChevronUpIcon : ChevronDownIcon;
   const trendColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
-  
+
   return (
     <div className={`flex items-center text-sm ${trendColor}`}>
       <TrendIcon className="h-4 w-4" />
@@ -18,21 +19,6 @@ const TrendIndicator = React.memo(function TrendIndicator({ trend }: { trend: Me
     </div>
   );
 });
-
-function LoadingSkeleton() {
-  return (
-    <div className="animate-pulse">
-      <div className="flex items-center justify-between">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-        <div className="h-6 w-6 bg-gray-200 dark:bg-gray-700 rounded"></div>
-      </div>
-      <div className="mt-2">
-        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-2"></div>
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-      </div>
-    </div>
-  );
-}
 
 const MetricCard = React.memo(function MetricCard({
   title,
@@ -64,7 +50,7 @@ const MetricCard = React.memo(function MetricCard({
   if (loading) {
     return (
       <div className={`rounded-lg border-2 p-6 ${colorClasses[color]}`}>
-        <LoadingSkeleton />
+        <CardSkeleton />
       </div>
     );
   }
@@ -77,14 +63,14 @@ const MetricCard = React.memo(function MetricCard({
           <Icon className={`h-6 w-6 ${iconColorClasses[color]}`} />
         )}
       </div>
-      
+
       <div className="mt-2">
         <div className="flex items-baseline">
           <p className="text-2xl font-semibold text-primary">
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
         </div>
-        
+
         <div className="mt-1 flex items-center justify-between">
           {subtitle && (
             <p className="text-sm text-muted">{subtitle}</p>
