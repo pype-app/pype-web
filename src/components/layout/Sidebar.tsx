@@ -4,6 +4,7 @@ import React, { Fragment, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
+import { ROUTES } from '@/constants';
 import {
   HomeIcon,
   CircleStackIcon,
@@ -29,29 +30,29 @@ interface NavigationItem {
 }
 
 const navigation: NavigationItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+  { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: HomeIcon },
   {
     name: 'Pipelines',
     icon: CircleStackIcon,
     children: [
-      { name: 'Environment & Secrets', href: '/dashboard/environment', icon: KeyIcon },
-      { name: 'Create Pipeline', href: '/dashboard/pipelines/create', icon: PlusCircleIcon },
-      { name: 'Pipelines', href: '/dashboard/pipelines', icon: CircleStackIcon },
+      { name: 'Environment & Secrets', href: ROUTES.ENVIRONMENT, icon: KeyIcon },
+      { name: 'Create Pipeline', href: ROUTES.PIPELINE_CREATE, icon: PlusCircleIcon },
+      { name: 'Pipelines', href: ROUTES.PIPELINES, icon: CircleStackIcon },
     ],
   },
   {
     name: 'Monitor',
     icon: ComputerDesktopIcon,
     children: [
-      { name: 'Analytics', href: '/dashboard/analytics', icon: ChartBarIcon },
-      { name: 'Executions & Logs', href: '/dashboard/executions', icon: DocumentTextIcon },
+      { name: 'Analytics', href: ROUTES.ANALYTICS, icon: ChartBarIcon },
+      { name: 'Executions & Logs', href: ROUTES.EXECUTIONS, icon: DocumentTextIcon },
     ],
   },
   {
     name: 'Administration',
     icon: WrenchScrewdriverIcon,
     children: [
-      { name: 'Users', href: '/dashboard/users', icon: UsersIcon },
+      { name: 'Users', href: ROUTES.USERS, icon: UsersIcon },
       // { name: 'Settings', href: '/dashboard/settings', icon: Cog6ToothIcon }, // Oculto temporariamente para MVP
     ],
   },

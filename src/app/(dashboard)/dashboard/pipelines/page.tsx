@@ -20,6 +20,7 @@ export default function PipelinesPage() {
   const {
     pipelines,
     loading,
+    isRefreshing,
     error,
     pagination,
     filters,
@@ -142,15 +143,19 @@ export default function PipelinesPage() {
       )}
 
       {/* Filters */}
-      <PipelineFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        loading={loading}
-        // availableTags={[]} // TODO: Load from backend
-      />
+      <div className={`transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
+        <PipelineFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          loading={loading}
+          isRefreshing={isRefreshing}
+          // availableTags={[]} // TODO: Load from backend
+        />
+      </div>
 
       {/* Pipeline list */}
-      <PipelineTable
+      <div className={`transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
+        <PipelineTable
         pipelines={pipelines}
         loading={loading}
         currentUserId={user?.id}
@@ -163,6 +168,7 @@ export default function PipelinesPage() {
         onDuplicate={handleDuplicate}
         onExport={handleExport}
       />
+      </div>
 
       {/* Pagination */}
       {pagination.total > 0 && (

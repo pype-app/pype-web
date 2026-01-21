@@ -13,6 +13,7 @@ interface UseAnalyticsResult {
   topPipelines: TopPipeline[];
   trends: ExecutionTrend[];
   loading: boolean;
+  isRefreshing: boolean;
   error: string | null;
   period: TimePeriod;
   setPeriod: (period: TimePeriod) => void;
@@ -24,12 +25,15 @@ export function useAnalytics(): UseAnalyticsResult {
   const [topPipelines, setTopPipelines] = useState<TopPipeline[]>([]);
   const [trends, setTrends] = useState<ExecutionTrend[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<TimePeriod>('30d');
 
-  const fetchData = async (currentPeriod: TimePeriod) => {
+  const fetchData = async (currentPeriod: TimePeriod, showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       setError(null);
 
       const [overviewData, pipelinesData, trendsData] = await Promise.all([
@@ -46,12 +50,28 @@ export function useAnalytics(): UseAnalyticsResult {
       setError(message);
       toast.error(message);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchData(period);
+    // Use isRefreshing effect when changing period to avoid flash
+    const loadPeriodData = async () => {
+      setIsRefreshing(true);
+      await fetchData(period, false);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setTimeout(() => setIsRefreshing(false), 200);
+    };
+    
+    if (overview) {
+      // If we already have data, use refresh effect
+      loadPeriodData();
+    } else {
+      // First load, show loading skeleton
+      fetchData(period, true);
+    }
   }, [period]);
 
   const handleSetPeriod = (newPeriod: TimePeriod) => {
@@ -59,7 +79,10 @@ export function useAnalytics(): UseAnalyticsResult {
   };
 
   const refresh = async () => {
-    await fetchData(period);
+    setIsRefreshing(true);
+    await fetchData(period, false);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setTimeout(() => setIsRefreshing(false), 200);
   };
 
   return {
@@ -67,6 +90,7 @@ export function useAnalytics(): UseAnalyticsResult {
     topPipelines,
     trends,
     loading,
+    isRefreshing,
     error,
     period,
     setPeriod: handleSetPeriod,

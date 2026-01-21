@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import * as yaml from 'js-yaml';
 import { toast } from 'react-hot-toast';
-import YamlEditor from '@/components/editor/YamlEditor';
 import FileUpload from '@/components/editor/FileUpload';
 import ValidationResults from '@/components/editor/ValidationResults';
-import { PIPELINE_TEMPLATES, TemplateType } from '@/constants/pipelineTemplates';
+import { EditorSkeleton } from '@/components/ui/skeletons';
+import { PIPELINE_TEMPLATES, TemplateType, ROUTES } from '@/constants';
 import { pipelineService } from '@/services/pipelineService';
 import { CreatePipelineRequest } from '@/types';
 import { DocumentIcon, CodeBracketIcon, PlayIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+
+// Lazy load Monaco Editor (reduces initial bundle by ~2MB)
+const YamlEditor = lazy(() => import('@/components/editor/YamlEditor'));
 
 interface PipelineEditorProps {
   pipelineId?: string; // Para modo de edição
@@ -49,7 +52,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
     } catch (error) {
       console.error('Erro ao carregar pipeline:', error);
       toast.error('Erro ao carregar pipeline');
-      router.push('/dashboard/pipelines');
+      router.push(ROUTES.PIPELINES);
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +126,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
         toast.success('Pipeline criado com sucesso!');
       }
 
-      router.push('/dashboard/pipelines');
+      router.push(ROUTES.PIPELINES);
     } catch (error: any) {
       console.error('Erro ao salvar pipeline:', error);
 
@@ -198,7 +201,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => router.push('/dashboard/pipelines')}
+            onClick={() => router.push(ROUTES.PIPELINES)}
             className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5" />
@@ -283,15 +286,17 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
               </div>
             </div> */}
 
-            {/* Editor */}
-            <YamlEditor
-              value={yamlContent}
-              onChange={(newValue) => {
-                setYamlContent(newValue);
-              }}
-              height="500px"
-              onValidationChange={handleValidationChange}
-            />
+            {/* Editor with Lazy Loading */}
+            <Suspense fallback={<EditorSkeleton height="500px" />}>
+              <YamlEditor
+                value={yamlContent}
+                onChange={(newValue) => {
+                  setYamlContent(newValue);
+                }}
+                height="500px"
+                onValidationChange={handleValidationChange}
+              />
+            </Suspense>
 
             {/* Validação */}
             <div className="mt-4">
@@ -308,7 +313,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
         <div className="flex justify-end space-x-3">
           <button
             type="button"
-            onClick={() => router.push('/dashboard/pipelines')}
+            onClick={() => router.push(ROUTES.PIPELINES)}
             className="btn-secondary"
           >
             Cancel
