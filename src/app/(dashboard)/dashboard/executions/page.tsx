@@ -207,6 +207,7 @@ export default function ExecutionsPage() {
   const { user } = useAuthStore();
   const [executions, setExecutions] = useState<PipelineExecution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [pipelineFilter, setPipelineFilter] = useState('');
@@ -222,17 +223,28 @@ export default function ExecutionsPage() {
     }
   }, [user]);
 
-  const fetchExecutions = async () => {
+  const fetchExecutions = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const result = await apiClient.get('/api/executions');
       setExecutions(result || []);
     } catch (error) {
       console.error('Error fetching executions:', error);
       setExecutions([]);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
+  };
+
+  const refreshExecutions = async () => {
+    setIsRefreshing(true);
+    await fetchExecutions(false);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setTimeout(() => setIsRefreshing(false), 200);
   };
 
   const formatDuration = (durationMs?: number) => {
@@ -318,7 +330,7 @@ export default function ExecutionsPage() {
       </div>
 
       {/* Filters and search */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className={`flex flex-col sm:flex-row gap-4 transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
         <div className="flex-1">
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -361,17 +373,17 @@ export default function ExecutionsPage() {
           
           <button
             type="button"
-            onClick={fetchExecutions}
+            onClick={refreshExecutions}
             className="inline-flex items-center gap-x-1.5 rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
-            <ArrowPathIcon className="-ml-0.5 h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+            <ArrowPathIcon className={`-ml-0.5 h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
             Refresh
           </button>
         </div>
       </div>
 
       {/* Executions list */}
-      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
+      <div className={`bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
         {filteredExecutions.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-sm text-gray-500 dark:text-gray-400">

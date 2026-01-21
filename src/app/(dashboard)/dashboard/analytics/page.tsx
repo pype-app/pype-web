@@ -20,6 +20,7 @@ export default function AnalyticsPage() {
     topPipelines,
     trends,
     loading,
+    isRefreshing,
     error,
     period,
     setPeriod,
@@ -105,10 +106,9 @@ export default function AnalyticsPage() {
           <button
             type="button"
             onClick={refresh}
-            disabled={loading}
-            className="inline-flex items-center rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-500 dark:disabled:text-gray-600"
+            className="inline-flex items-center rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
           >
-            <ArrowPathIcon className={`-ml-0.5 mr-1.5 h-5 w-5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
+            <ArrowPathIcon className={`-ml-0.5 mr-1.5 h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
             Refresh
           </button>
         </div>
@@ -120,8 +120,7 @@ export default function AnalyticsPage() {
         <select 
           value={period}
           onChange={(e) => setPeriod(e.target.value as TimePeriod)}
-          disabled={loading}
-          className="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 dark:text-white bg-white dark:bg-gray-700 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-blue-600 dark:focus:ring-blue-500 sm:text-sm sm:leading-6 disabled:opacity-50"
+          className="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 dark:text-white bg-white dark:bg-gray-700 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-blue-600 dark:focus:ring-blue-500 sm:text-sm sm:leading-6"
         >
           <option value="24h">Last 24 hours</option>
           <option value="7d">Last 7 days</option>
@@ -145,7 +144,7 @@ export default function AnalyticsPage() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
           {metrics.map((metric) => (
           <div key={metric.name} className="bg-white dark:bg-gray-800 overflow-hidden shadow dark:shadow-lg rounded-lg">
             <div className="p-5">
@@ -191,7 +190,7 @@ export default function AnalyticsPage() {
       )}
 
       {/* Charts placeholder */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <div className={`grid grid-cols-1 gap-8 lg:grid-cols-2 transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
         {/* Execution trends chart */}
         <div className="bg-white dark:bg-gray-800 shadow dark:shadow-lg rounded-lg">
           <div className="px-4 py-5 sm:p-6">
@@ -329,7 +328,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Top performing pipelines */}
-      <div className="bg-white dark:bg-gray-800 shadow dark:shadow-lg rounded-lg">
+      <div className={`bg-white dark:bg-gray-800 shadow dark:shadow-lg rounded-lg transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
             Top Performing Pipelines
@@ -382,7 +381,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Quick insights */}
-      <div className="bg-white dark:bg-gray-800 shadow dark:shadow-lg rounded-lg">
+      <div className={`bg-white dark:bg-gray-800 shadow dark:shadow-lg rounded-lg transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
             Quick Insights
