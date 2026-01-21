@@ -20,7 +20,7 @@ interface ExecutionChartProps {
   period?: '24h' | '7d';
 }
 
-function CustomTooltip({ active, payload, label }: any) {
+const CustomTooltip = React.memo(function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
@@ -40,9 +40,9 @@ function CustomTooltip({ active, payload, label }: any) {
   }
 
   return null;
-}
+});
 
-export default function ExecutionChart({ 
+const ExecutionChart = React.memo(function ExecutionChart({ 
   data, 
   height = 300, 
   showLegend = true,
@@ -118,4 +118,6 @@ export default function ExecutionChart({
       </ResponsiveContainer>
     </div>
   );
-}
+});
+
+export default ExecutionChart;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { pipelineService, PipelineListItem, PipelineFilters } from '@/services/pipelineService';
 
@@ -185,23 +185,26 @@ export const usePipelines = (initialFilters: PipelineFilters = {}): UsePipelines
     loadPipelines();
   }, [loadPipelines]);
 
+  // Memoize actions to prevent re-creating object on every render
+  const actions = useMemo(() => ({
+    loadPipelines,
+    setFilters,
+    setPage,
+    setPageSize,
+    runPipeline,
+    suspendPipeline,
+    resumePipeline,
+    deletePipeline,
+    refreshPipelines,
+  }), [loadPipelines, setFilters, setPage, setPageSize, runPipeline, suspendPipeline, resumePipeline, deletePipeline, refreshPipelines]);
+
   return {
     pipelines,
     loading,
     error,
     pagination,
     filters,
-    actions: {
-      loadPipelines,
-      setFilters,
-      setPage,
-      setPageSize,
-      runPipeline,
-      suspendPipeline,
-      resumePipeline,
-      deletePipeline,
-      refreshPipelines,
-    },
+    actions,
   };
 };
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { MetricCardProps } from '@/types/dashboard';
 
-function TrendIndicator({ trend }: { trend: MetricCardProps['trend'] }) {
+const TrendIndicator = React.memo(function TrendIndicator({ trend }: { trend: MetricCardProps['trend'] }) {
   if (!trend) return null;
 
   const { value, isPositive, label } = trend;
@@ -17,7 +17,7 @@ function TrendIndicator({ trend }: { trend: MetricCardProps['trend'] }) {
       </span>
     </div>
   );
-}
+});
 
 function LoadingSkeleton() {
   return (
@@ -34,7 +34,7 @@ function LoadingSkeleton() {
   );
 }
 
-export default function MetricCard({
+const MetricCard = React.memo(function MetricCard({
   title,
   value,
   subtitle,
@@ -94,4 +94,6 @@ export default function MetricCard({
       </div>
     </div>
   );
-}
+});
+
+export default MetricCard;

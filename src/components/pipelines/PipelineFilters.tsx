@@ -38,7 +38,8 @@ export default function PipelineFiltersComponent({
     if (debouncedSearch !== filters.search) {
       onFiltersChange({ search: debouncedSearch || undefined });
     }
-  }, [debouncedSearch, filters.search, onFiltersChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
   const handleStatusChange = (status: string) => {
     onFiltersChange({ 

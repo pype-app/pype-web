@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   CircleStackIcon, 
   PlayIcon, 
@@ -24,10 +24,11 @@ import { UserRole } from '@/types';
 import { APP_CONFIG } from '@/constants';
 
 export default function DashboardPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [onlyMine, setOnlyMine] = useState(() => {
@@ -61,10 +62,11 @@ export default function DashboardPage() {
     }
   }, [autoRefresh]);
 
-  const loadStats = async (isRefresh = false) => {
+  const loadStats = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) {
         setRefreshing(true);
+        setIsTransitioning(true);
       } else {
         setLoading(true);
       }
@@ -73,6 +75,12 @@ export default function DashboardPage() {
       // USER sempre filtra por criador
       const shouldFilter = user?.role === UserRole.User || onlyMine;
       const data = await dashboardService.getStats(shouldFilter);
+      
+      // Pequeno delay para evitar flash em requests rápidas
+      if (isRefresh) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
       setStats(data);
       setLastRefresh(new Date());
     } catch (err) {
@@ -81,8 +89,10 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      // Delay adicional para transição suave
+      setTimeout(() => setIsTransitioning(false), 200);
     }
-  };
+  }, [user?.role, onlyMine]);
 
   // Auto-refresh every 30 seconds
   useInterval(
@@ -96,10 +106,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadStats();
-  }, [onlyMine]);
+  }, [loadStats]);
 
-  // Preparar dados para os cards de métricas
-  const getMetricCards = (): MetricCardProps[] => {
+  // Preparar dados para os cards de métricas (memoizado)
+  const metricCards = useMemo((): MetricCardProps[] => {
     if (!stats) return [];
 
     return [
@@ -142,10 +152,10 @@ export default function DashboardPage() {
         color: stats.executions.today.failed > 0 ? 'red' : 'gray'
       }
     ];
-  };
+  }, [stats]);
 
-  // Preparar dados para gráfico de execuções
-  const getExecutionChartData = (): TimeSeriesDataPoint[] => {
+  // Preparar dados para gráfico de execuções (memoizado)
+  const executionChartData = useMemo((): TimeSeriesDataPoint[] => {
     if (!stats?.executions.last24Hours) return [];
 
     return stats.executions.last24Hours.map(point => ({
@@ -154,10 +164,10 @@ export default function DashboardPage() {
       failed: point.failed,
       total: point.total
     }));
-  };
+  }, [stats?.executions.last24Hours]);
 
-  // Preparar dados para gráfico de status
-  const getStatusChartData = (): ChartDataPoint[] => {
+  // Preparar dados para gráfico de status (memoizado)
+  const statusChartData = useMemo((): ChartDataPoint[] => {
     if (!stats?.executions.today) return [];
 
     const { success, failed, running, pending, cancelled } = stats.executions.today;
@@ -169,7 +179,7 @@ export default function DashboardPage() {
       { name: 'Pending', value: pending, label: 'Pending' },
       { name: 'Cancelled', value: cancelled, label: 'Cancelled' }
     ].filter(item => item.value > 0);
-  };
+  }, [stats?.executions.today]);
 
   if (error) {
     return (
@@ -277,37 +287,35 @@ export default function DashboardPage() {
           <button
             onClick={() => loadStats(true)}
             disabled={refreshing}
-            className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50"
+            className="inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             <ArrowPathIcon className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* Metrics Cards */}
-      <MetricGrid
-        metrics={getMetricCards()}
-        loading={loading}
-        columns={4}
-      />
+      {/* Metrics Section */}
+      <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
+        <MetricGrid
+          metrics={metricCards}
+          loading={false}
+          columns={4}
+        />
+      </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 transition-opacity duration-300 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
         {/* Execution Chart */}
         <div className="bg-white dark:bg-gray-800 shadow dark:shadow-lg rounded-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Executions - Last 24h
           </h3>
-          {loading ? (
-            <div className="h-72 bg-gray-50 dark:bg-gray-700 rounded animate-pulse"></div>
-          ) : (
-            <ExecutionChart 
-              data={getExecutionChartData()} 
-              height={288}
-              period="24h"
-            />
-          )}
+          <ExecutionChart 
+            data={executionChartData} 
+            height={288}
+            period="24h"
+          />
         </div>
 
         {/* Status Chart */}
@@ -315,30 +323,22 @@ export default function DashboardPage() {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Status - Today
           </h3>
-          {loading ? (
-            <div className="h-72 bg-gray-50 dark:bg-gray-700 rounded animate-pulse"></div>
-          ) : (
-            <StatusChart 
-              data={getStatusChartData()} 
-              height={288}
-            />
-          )}
+          <StatusChart 
+            data={statusChartData} 
+            height={288}
+          />
         </div>
       </div>
 
       {/* Performance Chart */}
-      <div className="bg-white dark:bg-gray-800 shadow dark:shadow-lg rounded-lg p-6">
+      <div className={`bg-white dark:bg-gray-800 shadow dark:shadow-lg rounded-lg p-6 transition-opacity duration-300 ${isTransitioning ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Performance by Hour
         </h3>
-        {loading ? (
-          <div className="h-72 bg-gray-50 dark:bg-gray-700 rounded animate-pulse"></div>
-        ) : (
-          <PerformanceChart 
-            data={stats?.performance.executionTimeByHour || []} 
-            height={288}
-          />
-        )}
+        <PerformanceChart 
+          data={stats?.performance.executionTimeByHour || []} 
+          height={288}
+        />
       </div>
 
       {/* Quick actions */}

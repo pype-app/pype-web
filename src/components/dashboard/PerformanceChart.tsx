@@ -17,7 +17,7 @@ interface PerformanceChartProps {
   height?: number;
 }
 
-function CustomTooltip({ active, payload, label }: any) {
+const CustomTooltip = React.memo(function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const data = payload[0];
     return (
@@ -36,7 +36,7 @@ function CustomTooltip({ active, payload, label }: any) {
   }
 
   return null;
-}
+});
 
 function formatDuration(milliseconds: number): string {
   if (milliseconds < 1000) {
@@ -57,7 +57,7 @@ function formatDuration(milliseconds: number): string {
   return `${hours.toFixed(1)}h`;
 }
 
-export default function PerformanceChart({ 
+const PerformanceChart = React.memo(function PerformanceChart({ 
   data, 
   height = 300 
 }: PerformanceChartProps) {
@@ -114,4 +114,6 @@ export default function PerformanceChart({
       </ResponsiveContainer>
     </div>
   );
-}
+});
+
+export default PerformanceChart;

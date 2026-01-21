@@ -36,7 +36,7 @@ const navigation: NavigationItem[] = [
     icon: CircleStackIcon,
     children: [
       { name: 'Environment & Secrets', href: ROUTES.ENVIRONMENT, icon: KeyIcon },
-      { name: 'Create Pipeline', href: ROUTES.PIPELINES_CREATE, icon: PlusCircleIcon },
+      { name: 'Create Pipeline', href: ROUTES.PIPELINE_CREATE, icon: PlusCircleIcon },
       { name: 'Pipelines', href: ROUTES.PIPELINES, icon: CircleStackIcon },
     ],
   },
