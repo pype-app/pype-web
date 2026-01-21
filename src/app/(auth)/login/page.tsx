@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast';
 import { useAuthStore } from '@/store/auth';
 import { LoginRequest } from '@/types';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import { ROUTES } from '@/constants';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -65,7 +66,7 @@ export default function LoginPage() {
       
       // Only redirect on successful login
       toast.success('Login successful!');
-      router.push('/dashboard');
+      router.push(ROUTES.DASHBOARD);
     } catch (error: any) {
       // Error is already set in authStore, just show toast
       const errorMessage = error?.response?.data?.error || 'Login failed. Please check your credentials.';

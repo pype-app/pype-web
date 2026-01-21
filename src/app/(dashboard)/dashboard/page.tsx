@@ -21,6 +21,7 @@ import { DashboardStats, MetricCardProps, TimeSeriesDataPoint, ChartDataPoint } 
 import { useInterval } from '@/hooks/useInterval';
 import { useAuthStore } from '@/store/auth';
 import { UserRole } from '@/types';
+import { APP_CONFIG } from '@/constants';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -90,7 +91,7 @@ export default function DashboardPage() {
         loadStats(true);
       }
     },
-    autoRefresh ? 30000 : null // 30 segundos ou null para pausar
+    autoRefresh ? APP_CONFIG.REFRESH_INTERVAL : null
   );
 
   useEffect(() => {

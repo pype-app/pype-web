@@ -8,6 +8,7 @@ import {
 import { PipelineFilters } from '@/services/pipelineService';
 import { useAuthStore } from '@/store/auth';
 import { UserRole } from '@/types';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface PipelineFiltersProps {
   filters: PipelineFilters;
@@ -31,15 +32,13 @@ export default function PipelineFiltersComponent({
   const isUser = user?.role === UserRole.User;
 
   // Debounce search input
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (search !== filters.search) {
-        onFiltersChange({ search: search || undefined });
-      }
-    }, 300);
+  const debouncedSearch = useDebounce(search, 300);
 
-    return () => clearTimeout(timeoutId);
-  }, [search, filters.search, onFiltersChange]);
+  useEffect(() => {
+    if (debouncedSearch !== filters.search) {
+      onFiltersChange({ search: debouncedSearch || undefined });
+    }
+  }, [debouncedSearch, filters.search, onFiltersChange]);
 
   const handleStatusChange = (status: string) => {
     onFiltersChange({ 

@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast';
 import { useAuthStore } from '@/store/auth';
 import { RegisterRequest, TenantPlan } from '@/types';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import { ROUTES } from '@/constants';
 
 const registerSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -69,11 +70,11 @@ export default function RegisterPage() {
       // Se a resposta indicar que precisa confirmar email
       if (result && !result.user?.emailConfirmed) {
         toast.success('Account created! Please check your email to confirm your account.');
-        router.push('/login?message=check-email');
+        router.push(ROUTES.LOGIN + '?message=check-email');
       } else {
         // Login automático após registro
         toast.success('Account created successfully!');
-        router.push('/dashboard');
+        router.push(ROUTES.DASHBOARD);
       }
     } catch (error) {
       toast.error('Registration failed. Please try again.');

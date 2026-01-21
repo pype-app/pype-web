@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/auth';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import apiClient from '@/lib/api-client';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface PipelineExecution {
   id: string;
@@ -212,6 +213,9 @@ export default function ExecutionsPage() {
   const [selectedExecution, setSelectedExecution] = useState<PipelineExecution | null>(null);
   const [showLogsModal, setShowLogsModal] = useState(false);
 
+  // Debounce search to avoid excessive filtering
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
   useEffect(() => {
     if (user) {
       fetchExecutions();
@@ -252,9 +256,9 @@ export default function ExecutionsPage() {
   };
 
   const filteredExecutions = executions.filter(execution => {
-    const matchesSearch = !searchTerm || 
-      execution.pipelineName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      execution.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !debouncedSearch || 
+      execution.pipelineName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      execution.id.toLowerCase().includes(debouncedSearch.toLowerCase());
     
     const matchesStatus = !statusFilter || execution.status === statusFilter;
     const matchesPipeline = !pipelineFilter || execution.pipelineName === pipelineFilter;
