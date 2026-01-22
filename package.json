@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "clean-cache": "if exist .next rmdir /s /q .next && if exist node_modules rmdir /s /q node_modules && npm install",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "jest",
