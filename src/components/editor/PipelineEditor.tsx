@@ -1,16 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import * as yaml from 'js-yaml';
 import { toast } from 'react-hot-toast';
-import YamlEditor from '@/components/editor/YamlEditor';
 import FileUpload from '@/components/editor/FileUpload';
 import ValidationResults from '@/components/editor/ValidationResults';
-import { PIPELINE_TEMPLATES, TemplateType } from '@/constants/pipelineTemplates';
+import { EditorSkeleton } from '@/components/ui/skeletons';
+import { PIPELINE_TEMPLATES, TemplateType, ROUTES } from '@/constants';
 import { pipelineService } from '@/services/pipelineService';
 import { CreatePipelineRequest } from '@/types';
 import { DocumentIcon, CodeBracketIcon, PlayIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { DryRunManager } from '@/components/pipelines/DryRunManager';
+
+// Lazy load Monaco Editor (reduces initial bundle by ~2MB)
+const YamlEditor = lazy(() => import('@/components/editor/YamlEditor'));
 
 interface PipelineEditorProps {
   pipelineId?: string; // Para modo de edição
@@ -26,6 +30,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [pipelineName, setPipelineName] = useState('Unnamed Pipeline');
 
   const isEditMode = !!pipelineId;
 
@@ -46,10 +51,11 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
       // Carregar apenas o YAML - informações básicas serão extraídas do YAML
       setYamlContent(pipeline.yamlDefinition);
+      setPipelineName(pipeline.name);
     } catch (error) {
       console.error('Erro ao carregar pipeline:', error);
       toast.error('Erro ao carregar pipeline');
-      router.push('/dashboard/pipelines');
+      router.push(ROUTES.PIPELINES);
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +129,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
         toast.success('Pipeline criado com sucesso!');
       }
 
-      router.push('/dashboard/pipelines');
+      router.push(ROUTES.PIPELINES);
     } catch (error: any) {
       console.error('Erro ao salvar pipeline:', error);
 
@@ -198,7 +204,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => router.push('/dashboard/pipelines')}
+            onClick={() => router.push(ROUTES.PIPELINES)}
             className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5" />
@@ -214,17 +220,13 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
         </div>
 
         <div className="flex items-center space-x-3">
-
-          {isEditMode && (
-            <button
-              type="button"
-              onClick={handleTestRun}
+          {isEditMode && pipelineId && (
+            <DryRunManager
+              pipelineId={pipelineId}
+              pipelineName={pipelineName}
               disabled={!isValidYaml}
-              className="inline-flex items-center px-3 py-2 border border-green-300 dark:border-green-600 shadow-sm text-sm leading-4 font-medium rounded-md text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/50 hover:bg-green-100 dark:hover:bg-green-900/70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <PlayIcon className="h-4 w-4 mr-1" />
-              Testar Pipeline
-            </button>
+              yamlContent={yamlContent}
+            />
           )}
         </div>
       </div>
@@ -283,15 +285,17 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
               </div>
             </div> */}
 
-            {/* Editor */}
-            <YamlEditor
-              value={yamlContent}
-              onChange={(newValue) => {
-                setYamlContent(newValue);
-              }}
-              height="500px"
-              onValidationChange={handleValidationChange}
-            />
+            {/* Editor with Lazy Loading */}
+            <Suspense fallback={<EditorSkeleton height="500px" />}>
+              <YamlEditor
+                value={yamlContent}
+                onChange={(newValue) => {
+                  setYamlContent(newValue);
+                }}
+                height="500px"
+                onValidationChange={handleValidationChange}
+              />
+            </Suspense>
 
             {/* Validação */}
             <div className="mt-4">
@@ -308,7 +312,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
         <div className="flex justify-end space-x-3">
           <button
             type="button"
-            onClick={() => router.push('/dashboard/pipelines')}
+            onClick={() => router.push(ROUTES.PIPELINES)}
             className="btn-secondary"
           >
             Cancel
