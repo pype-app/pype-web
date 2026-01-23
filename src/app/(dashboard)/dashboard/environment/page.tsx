@@ -8,6 +8,7 @@ import {
   EnvironmentVariable 
 } from '@/services/environment-variables';
 import { toast } from 'react-hot-toast';
+import { useDebounce } from '@/hooks/useDebounce';
 import { 
   EyeIcon, 
   EyeSlashIcon, 
@@ -81,9 +82,12 @@ export default function EnvironmentPage() {
     setShowValues(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // Debounce search to improve performance
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
   const filteredVariables = variables.filter(variable => {
-    const matchesSearch = variable.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (variable.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+    const matchesSearch = variable.key.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                         (variable.description?.toLowerCase().includes(debouncedSearch.toLowerCase()) || false);
     
     if (filter === 'secrets') return matchesSearch && variable.isSecret;
     if (filter === 'env') return matchesSearch && !variable.isSecret;

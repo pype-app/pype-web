@@ -25,7 +25,7 @@ const COLORS = {
   cancelled: '#6b7280'
 };
 
-function CustomTooltip({ active, payload }: any) {
+const CustomTooltip = React.memo(function CustomTooltip({ active, payload }: any) {
   if (active && payload && payload.length) {
     const data = payload[0];
     return (
@@ -44,7 +44,7 @@ function CustomTooltip({ active, payload }: any) {
   }
 
   return null;
-}
+});
 
 function renderCustomLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) {
   if (percent < 0.05) return null; // Não mostrar label se for menos de 5%
@@ -69,7 +69,7 @@ function renderCustomLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent
   );
 }
 
-export default function StatusChart({ 
+const StatusChart = React.memo(function StatusChart({ 
   data, 
   height = 300, 
   showLegend = true 
@@ -132,4 +132,6 @@ export default function StatusChart({
       </ResponsiveContainer>
     </div>
   );
-}
+});
+
+export default StatusChart;

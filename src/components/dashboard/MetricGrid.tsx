@@ -9,7 +9,7 @@ interface MetricGridProps {
   className?: string;
 }
 
-export default function MetricGrid({ 
+const MetricGrid = React.memo(function MetricGrid({
   metrics, 
   loading = false, 
   columns = 4,
@@ -40,4 +40,6 @@ export default function MetricGrid({
       ))}
     </div>
   );
-}
+});
+
+export default MetricGrid;

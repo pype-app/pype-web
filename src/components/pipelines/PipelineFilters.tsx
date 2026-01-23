@@ -8,12 +8,14 @@ import {
 import { PipelineFilters } from '@/services/pipelineService';
 import { useAuthStore } from '@/store/auth';
 import { UserRole } from '@/types';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface PipelineFiltersProps {
   filters: PipelineFilters;
   onFiltersChange: (filters: Partial<PipelineFilters>) => void;
   availableTags?: string[];
   loading?: boolean;
+  isRefreshing?: boolean;
 }
 
 export default function PipelineFiltersComponent({
@@ -21,6 +23,7 @@ export default function PipelineFiltersComponent({
   onFiltersChange,
   availableTags = [],
   loading = false,
+  isRefreshing = false,
 }: PipelineFiltersProps) {
   const [search, setSearch] = useState(filters.search || '');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -31,15 +34,14 @@ export default function PipelineFiltersComponent({
   const isUser = user?.role === UserRole.User;
 
   // Debounce search input
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (search !== filters.search) {
-        onFiltersChange({ search: search || undefined });
-      }
-    }, 300);
+  const debouncedSearch = useDebounce(search, 300);
 
-    return () => clearTimeout(timeoutId);
-  }, [search, filters.search, onFiltersChange]);
+  useEffect(() => {
+    if (debouncedSearch !== filters.search) {
+      onFiltersChange({ search: debouncedSearch || undefined });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
   const handleStatusChange = (status: string) => {
     onFiltersChange({ 
@@ -90,8 +92,7 @@ export default function PipelineFiltersComponent({
               placeholder="Search pipelines..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              disabled={loading}
-              className="block w-full rounded-md border-0 py-2 pl-10 pr-3 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:focus:ring-blue-500 disabled:opacity-50 sm:text-sm sm:leading-6"
+              className="block w-full rounded-md border-0 py-2 pl-10 pr-3 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:focus:ring-blue-500 sm:text-sm sm:leading-6"
             />
           </div>
         </div>
@@ -101,8 +102,7 @@ export default function PipelineFiltersComponent({
           <select 
             value={filters.status || 'all'}
             onChange={(e) => handleStatusChange(e.target.value)}
-            disabled={loading}
-            className="block rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:focus:ring-blue-500 disabled:opacity-50 sm:text-sm sm:leading-6"
+            className="block rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:focus:ring-blue-500 sm:text-sm sm:leading-6"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -114,8 +114,7 @@ export default function PipelineFiltersComponent({
             <button
               type="button"
               onClick={() => onFiltersChange({ onlyMine: !filters.onlyMine })}
-              disabled={loading}
-              className={`inline-flex items-center gap-x-1.5 px-3 py-2 text-sm font-semibold rounded-md shadow-sm disabled:opacity-50 transition-colors ${
+              className={`inline-flex items-center gap-x-1.5 px-3 py-2 text-sm font-semibold rounded-md shadow-sm transition-colors ${
                 filters.onlyMine
                   ? 'bg-blue-600 text-white hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400'
                   : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
@@ -138,8 +137,7 @@ export default function PipelineFiltersComponent({
           <button
             type="button"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            disabled={loading}
-            className="btn-secondary inline-flex items-center gap-x-1.5 disabled:opacity-50"
+            className="btn-secondary inline-flex items-center gap-x-1.5"
           >
             <FunnelIcon className="-ml-0.5 h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
             Filters
@@ -160,8 +158,7 @@ export default function PipelineFiltersComponent({
             <button
               type="button"
               onClick={clearFilters}
-              disabled={loading}
-              className="btn-secondary inline-flex items-center gap-x-1.5 disabled:opacity-50"
+              className="btn-secondary inline-flex items-center gap-x-1.5"
             >
               <XMarkIcon className="-ml-0.5 h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
               Clear
@@ -187,12 +184,11 @@ export default function PipelineFiltersComponent({
                       key={tag}
                       type="button"
                       onClick={() => handleTagToggle(tag)}
-                      disabled={loading}
                       className={`inline-flex items-center rounded-md px-3 py-1 text-sm font-medium transition-colors ${
                         isSelected
                           ? 'badge-blue ring-1 ring-blue-600/20 dark:ring-blue-400/30'
                           : 'bg-white dark:bg-gray-600 text-secondary ring-1 ring-gray-300 dark:ring-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500'
-                      } disabled:opacity-50`}
+                      }`}
                     >
                       {tag}
                       {isSelected && (

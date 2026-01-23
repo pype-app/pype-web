@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth';
+import { ROUTES } from '@/constants';
 
 export default function HomePage() {
   const router = useRouter();
@@ -10,9 +11,9 @@ export default function HomePage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/dashboard');
+      router.push(ROUTES.DASHBOARD);
     } else {
-      router.push('/login');
+      router.push(ROUTES.LOGIN);
     }
   }, [isAuthenticated, router]);
 

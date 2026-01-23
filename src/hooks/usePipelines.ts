@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { pipelineService, PipelineListItem, PipelineFilters } from '@/services/pipelineService';
 
 interface UsePipelinesResult {
   pipelines: PipelineListItem[];
   loading: boolean;
+  isRefreshing: boolean;
   error: string | null;
   pagination: {
     page: number;
@@ -29,6 +30,7 @@ interface UsePipelinesResult {
 export const usePipelines = (initialFilters: PipelineFilters = {}): UsePipelinesResult => {
   const [pipelines, setPipelines] = useState<PipelineListItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -42,9 +44,11 @@ export const usePipelines = (initialFilters: PipelineFilters = {}): UsePipelines
     ...initialFilters,
   });
 
-  const loadPipelines = useCallback(async () => {
+  const loadPipelines = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       setError(null);
 
       const response = await pipelineService.listPipelines(filters);
@@ -66,7 +70,9 @@ export const usePipelines = (initialFilters: PipelineFilters = {}): UsePipelines
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, [filters]);
 
@@ -177,7 +183,11 @@ export const usePipelines = (initialFilters: PipelineFilters = {}): UsePipelines
   }, [pipelines]);
 
   const refreshPipelines = useCallback(async () => {
-    await loadPipelines();
+    setIsRefreshing(true);
+    await loadPipelines(false); // Don't show loading state during refresh
+    // Artificial delay to prevent flash on fast responses
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setTimeout(() => setIsRefreshing(false), 200);
   }, [loadPipelines]);
 
   // Load pipelines when filters change
@@ -185,23 +195,27 @@ export const usePipelines = (initialFilters: PipelineFilters = {}): UsePipelines
     loadPipelines();
   }, [loadPipelines]);
 
+  // Memoize actions to prevent re-creating object on every render
+  const actions = useMemo(() => ({
+    loadPipelines,
+    setFilters,
+    setPage,
+    setPageSize,
+    runPipeline,
+    suspendPipeline,
+    resumePipeline,
+    deletePipeline,
+    refreshPipelines,
+  }), [loadPipelines, setFilters, setPage, setPageSize, runPipeline, suspendPipeline, resumePipeline, deletePipeline, refreshPipelines]);
+
   return {
     pipelines,
     loading,
+    isRefreshing,
     error,
     pagination,
     filters,
-    actions: {
-      loadPipelines,
-      setFilters,
-      setPage,
-      setPageSize,
-      runPipeline,
-      suspendPipeline,
-      resumePipeline,
-      deletePipeline,
-      refreshPipelines,
-    },
+    actions,
   };
 };
 
