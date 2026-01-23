@@ -159,7 +159,7 @@ export function ErrorDisplay({
           {primarySuggestion && onApplySuggestion && (
             <Button
               size="sm"
-              variant="default"
+              variant="primary"
               onClick={() => onApplySuggestion(primarySuggestion)}
             >
               ✨ Apply Suggestion: {primarySuggestion}
