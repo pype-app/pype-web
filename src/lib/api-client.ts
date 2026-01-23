@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { useAuthStore } from '@/store/auth';
 import logger from '@/utils/logger';
+import { isErrorResponseDto } from '@/lib/error-formatter';
 
 // Runtime configuration cache
 let runtimeConfig: { PYPE_API_URL: string } | null = null;
@@ -112,7 +113,7 @@ class ApiClient {
       }
     );
 
-    // Response interceptor to handle auth errors
+    // Response interceptor to handle auth errors and ErrorResponseDto
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
@@ -125,6 +126,24 @@ class ApiClient {
           message: error.response?.data?.error || error.message,
           requestData: error.config?.data ? JSON.parse(error.config.data) : null,
         });
+
+        // Parse ErrorResponseDto if available (IMP-011 - ADR-003)
+        if (error.response?.data && isErrorResponseDto(error.response.data)) {
+          const errorDto = error.response.data;
+          
+          // Attach to error object for custom handling
+          error.pypeError = errorDto;
+
+          // Dispatch to error handler (unless it's a 401 that will retry)
+          // Import dynamically to avoid circular dependency
+          if (error.response.status !== 401 || error.config._retry) {
+            import('@/hooks/useErrorHandler').then(({ useErrorHandler }) => {
+              useErrorHandler.getState().showError(errorDto);
+            }).catch((importError) => {
+              logger.error('Failed to import useErrorHandler:', importError);
+            });
+          }
+        }
         
         const original = error.config;
         
