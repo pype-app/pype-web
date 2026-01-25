@@ -120,10 +120,14 @@ export interface StartDryRunRequest {
 
 /**
  * Response when enqueueing a dry-run job
+ * IMPORTANT: Backend returns 'executionId', not 'dryRunId'
  */
 export interface StartDryRunResponse {
-  /** Unique identifier for tracking this dry-run */
-  dryRunId: string
+  /** Unique identifier for tracking this dry-run (backend field name) */
+  executionId: string
+  
+  /** Current execution status */
+  status: string
   
   /** Message confirming the dry-run was enqueued */
   message: string
