@@ -10,9 +10,12 @@ import { EditorSkeleton } from '@/components/ui/skeletons';
 import { PIPELINE_TEMPLATES, TemplateType, ROUTES } from '@/constants';
 import { pipelineService } from '@/services/pipelineService';
 import { CreatePipelineRequest } from '@/types';
+import { ValidationError } from '@/types/errors';
 import { DocumentIcon, CodeBracketIcon, PlayIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { DryRunManager } from '@/components/pipelines/DryRunManager';
+import { ValidationErrorModal } from '@/components/pipelines/ValidationErrorModal';
 import { formatApiError } from '@/lib/error-formatter';
+import { EnrichedValidationError } from '@/types/errors';
 
 // Lazy load Monaco Editor (reduces initial bundle by ~2MB)
 const YamlEditor = lazy(() => import('@/components/editor/YamlEditor'));
@@ -32,6 +35,8 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [pipelineName, setPipelineName] = useState('Unnamed Pipeline');
+  const [backendValidationErrors, setBackendValidationErrors] = useState<EnrichedValidationError[]>([]); // 🆕 BUG-001
+  const [showValidationModal, setShowValidationModal] = useState(false); // 🆕 BUG-001: Modal de erros
 
   const isEditMode = !!pipelineId;
 
@@ -142,6 +147,25 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
       router.push(ROUTES.PIPELINES);
     } catch (error: any) {
+      // 🆕 BUG-001: Capture enriched validation errors from backend
+      // Backend returns validationErrors in "validationErrors" field (not "errors")
+      if (error.response?.status === 400 && error.response?.data?.validationErrors) {
+        const errors = error.response.data.validationErrors as EnrichedValidationError[];
+        console.log('🔍 Validation errors captured:', errors);
+        setBackendValidationErrors(errors);
+        setShowValidationModal(true); // 🆕 BUG-001: Open modal instead of toast
+        return;
+      }
+      
+      // Validation errors returned as 422 (Unprocessable Entity)
+      if (error.response?.status === 422 && error.response?.data?.validationErrors) {
+        const errors = error.response.data.validationErrors as EnrichedValidationError[];
+        console.log('🔍 Validation errors captured (422):', errors);
+        setBackendValidationErrors(errors);
+        setShowValidationModal(true);
+        return;
+      }
+      
       // ✅ ARCH-001: Usar formatação centralizada de erros
       const errorMessage = formatApiError(error);
       
@@ -190,9 +214,17 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <>
+      {/* 🆕 BUG-001: Modal de erros de validação */}
+      <ValidationErrorModal
+        isOpen={showValidationModal}
+        onClose={() => setShowValidationModal(false)}
+        errors={backendValidationErrors}
+      />
+
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => router.push(ROUTES.PIPELINES)}
@@ -282,9 +314,11 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
                 value={yamlContent}
                 onChange={(newValue) => {
                   setYamlContent(newValue);
+                  setBackendValidationErrors([]); // 🆕 BUG-001: Limpar erros ao editar
                 }}
                 height="500px"
                 onValidationChange={handleValidationChange}
+                validationErrors={backendValidationErrors} // 🆕 BUG-001: Passar erros do backend
               />
             </Suspense>
 
@@ -319,7 +353,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
           </button>
         </div>
       </div>
-
-    </div>
+      </div>
+    </>
   );
 }
