@@ -83,8 +83,8 @@ class PipelineService {
   }
 
   // Executa pipeline manualmente
-  async runPipeline(id: string): Promise<{ executionId: string; enqueued: boolean }> {
-    return await apiClient.post<{ executionId: string; enqueued: boolean }>(`${this.adminUrl}/${id}/run`);
+  async runPipeline(id: string): Promise<{ jobId: string; enqueued: boolean; message?: string }> {
+    return await apiClient.post<{ jobId: string; enqueued: boolean; message?: string }>(`${this.adminUrl}/${id}/run`);
   }
 
   // Suspende pipeline (desativa)
