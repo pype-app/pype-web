@@ -1,8 +1,9 @@
 'use client';
 
 import { Editor } from '@monaco-editor/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import * as yaml from 'js-yaml';
+import { ValidationError } from '@/types/errors';
 
 interface YamlEditorProps {
   value: string;
@@ -10,6 +11,7 @@ interface YamlEditorProps {
   height?: string;
   readOnly?: boolean;
   onValidationChange?: (isValid: boolean, errors: string[]) => void;
+  validationErrors?: ValidationError[]; // 🆕 BUG-001: Erros enriquecidos do backend
 }
 
 export default function YamlEditor({
@@ -18,15 +20,55 @@ export default function YamlEditor({
   height = '400px',
   readOnly = false,
   onValidationChange,
+  validationErrors, // 🆕 BUG-001
 }: YamlEditorProps) {
   const [editorTheme, setEditorTheme] = useState('vs-light');
   const [isEditorReady, setIsEditorReady] = useState(false);
+  const editorRef = useRef<any>(null); // 🆕 BUG-001: Referência ao editor
+  const monacoRef = useRef<any>(null); // 🆕 BUG-001: Referência ao monaco
 
   useEffect(() => {
     // Detect system theme or use light as default
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setEditorTheme(prefersDark ? 'vs-dark' : 'vs-light');
   }, []);
+
+  // 🆕 BUG-001: Atualizar markers quando validationErrors mudar
+  useEffect(() => {
+    if (editorRef.current && monacoRef.current && validationErrors) {
+      setValidationMarkers(validationErrors);
+    }
+  }, [validationErrors]);
+
+  // 🆕 BUG-001: Definir markers de validação no editor
+  const setValidationMarkers = (errors: ValidationError[]) => {
+    if (!editorRef.current || !monacoRef.current) return;
+
+    const model = editorRef.current.getModel();
+    if (!model) return;
+
+    const markers = errors.map(error => ({
+      startLineNumber: error.line || 1,
+      startColumn: error.column || 1,
+      endLineNumber: error.line || 1,
+      endColumn: (error.column || 1) + 50, // Destacar linha inteira
+      message: error.message + (error.suggestion ? `\n\n💡 Sugestão: ${error.suggestion}` : ''),
+      severity: monacoRef.current.MarkerSeverity.Error,
+      source: 'pype-validator',
+    }));
+
+    monacoRef.current.editor.setModelMarkers(model, 'pype-validator', markers);
+  };
+
+  // 🆕 BUG-001: Limpar markers
+  const clearValidationMarkers = () => {
+    if (!editorRef.current || !monacoRef.current) return;
+
+    const model = editorRef.current.getModel();
+    if (!model) return;
+
+    monacoRef.current.editor.setModelMarkers(model, 'pype-validator', []);
+  };
 
   const handleEditorChange = (newValue: string | undefined) => {
     const content = newValue || '';
@@ -145,6 +187,8 @@ export default function YamlEditor({
 
   const handleEditorDidMount = async (editor: any, monaco: any) => {
     setIsEditorReady(true);
+    editorRef.current = editor; // 🆕 BUG-001: Salvar referência
+    monacoRef.current = monaco; // 🆕 BUG-001: Salvar referência
     
     try {
       console.log('🔧 Configurando Monaco Editor...');
