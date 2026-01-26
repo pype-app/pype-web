@@ -247,11 +247,14 @@ export function useDryRun(options: UseDryRunOptions = {}): UseDryRunReturn {
     setIsLoading(true)
 
     try {
-      // Enqueue dry-run job
+      // Enqueue dry-run job via new endpoint (BUG-002)
       const response = await apiClient.post<StartDryRunResponse>(
-        `/pipelines/crud/${pipelineId}/dry-run`,
-        yamlOverride ? { yamlOverride } : null,
-        { params: { sampleSize } }
+        '/pipelines/crud/dry-run',
+        {
+          pipelineId: pipelineId,
+          yamlContent: yamlOverride || null,
+          sampleSize: sampleSize
+        }
       )
 
       if (!isMountedRef.current) return
