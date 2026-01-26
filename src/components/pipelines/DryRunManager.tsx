@@ -50,7 +50,7 @@ export function DryRunManager({
       setShowResults(true)
     },
     onError: () => {
-      // Also open results modal on error (will show error details)
+      // Open results modal to show validation/execution errors
       setShowResults(true)
     },
   })
@@ -86,6 +86,7 @@ export function DryRunManager({
         onClose={() => setShowResults(false)}
         result={dryRunState.result}
         status={dryRunState.status}
+        error={dryRunState.error}
         pipelineName={pipelineName}
       />
     </div>

@@ -279,14 +279,21 @@ export function useDryRun(options: UseDryRunOptions = {}): UseDryRunReturn {
       let errorMessage = errorData?.error || errorData?.message || err.message || 'Failed to start dry-run'
       
       // If there are validation errors, format them nicely
-      if (errorData?.errors && Array.isArray(errorData.errors)) {
-        const details = errorData.errors.map((e: any) => 
-          `  • ${e.path || 'Unknown'}: ${e.message || 'Validation error'}`
-        ).join('\n')
-        errorMessage = `${errorMessage}\n\n${details}`
+      if (errorData?.errors && typeof errorData.errors === 'object') {
+        // Handle both Schema errors (array) and other error formats
+        if (errorData.errors.Schema && Array.isArray(errorData.errors.Schema)) {
+          const schemaErrors = errorData.errors.Schema.join('\n\n')
+          errorMessage = `YAML Validation Failed:\n\n${schemaErrors}`
+        } else if (Array.isArray(errorData.errors)) {
+          const details = errorData.errors.map((e: any) => 
+            `  • ${e.path || 'Unknown'}: ${e.message || 'Validation error'}`
+          ).join('\n')
+          errorMessage = `${errorMessage}\n\n${details}`
+        }
       }
       
       setError(errorMessage)
+      setStatus('failed')  // ✅ Set status so modal can render error state
       onError?.(errorMessage)
     } finally {
       if (isMountedRef.current) {
