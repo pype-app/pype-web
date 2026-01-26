@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { useAuthStore } from '@/store/auth';
 import logger from '@/utils/logger';
+import { isErrorResponseDto, formatApiError, extractErrorDetails } from '@/lib/error-formatter';
 
 // Runtime configuration cache
 let runtimeConfig: { PYPE_API_URL: string } | null = null;
@@ -112,19 +113,44 @@ class ApiClient {
       }
     );
 
-    // Response interceptor to handle auth errors
+    // Response interceptor to handle auth errors and ErrorResponseDto
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
-        logger.error('API Error:', {
-          url: error.config?.url,
-          method: error.config?.method,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          message: error.response?.data?.error || error.message,
-          requestData: error.config?.data ? JSON.parse(error.config.data) : null,
-        });
+        // ✅ ARCH-001: Usar formatação centralizada de erros
+        // Log estruturado apenas em desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+          const errorDetails = extractErrorDetails(error);
+          logger.error('API Error:', errorDetails);
+        } else {
+          // Em produção, log mínimo
+          logger.error('API Error:', {
+            url: error.config?.url,
+            status: error.response?.status,
+            message: formatApiError(error),
+          });
+        }
+
+        // Anexar mensagem formatada ao erro para uso em catch blocks
+        error.formattedMessage = formatApiError(error);
+
+        // Parse ErrorResponseDto if available (IMP-011 - ADR-003)
+        if (error.response?.data && isErrorResponseDto(error.response.data)) {
+          const errorDto = error.response.data;
+          
+          // Attach to error object for custom handling
+          error.pypeError = errorDto;
+
+          // Dispatch to error handler (unless it's a 401 that will retry)
+          // Import dynamically to avoid circular dependency
+          if (error.response.status !== 401 || error.config._retry) {
+            import('@/hooks/useErrorHandler').then(({ useErrorHandler }) => {
+              useErrorHandler.getState().showError(errorDto);
+            }).catch((importError) => {
+              logger.error('Failed to import useErrorHandler:', importError);
+            });
+          }
+        }
         
         const original = error.config;
         

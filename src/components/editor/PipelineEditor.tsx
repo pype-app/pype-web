@@ -11,6 +11,8 @@ import { PIPELINE_TEMPLATES, TemplateType, ROUTES } from '@/constants';
 import { pipelineService } from '@/services/pipelineService';
 import { CreatePipelineRequest } from '@/types';
 import { DocumentIcon, CodeBracketIcon, PlayIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { DryRunManager } from '@/components/pipelines/DryRunManager';
+import { formatApiError } from '@/lib/error-formatter';
 
 // Lazy load Monaco Editor (reduces initial bundle by ~2MB)
 const YamlEditor = lazy(() => import('@/components/editor/YamlEditor'));
@@ -29,6 +31,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [pipelineName, setPipelineName] = useState('Unnamed Pipeline');
 
   const isEditMode = !!pipelineId;
 
@@ -49,6 +52,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
       // Carregar apenas o YAML - informações básicas serão extraídas do YAML
       setYamlContent(pipeline.yamlDefinition);
+      setPipelineName(pipeline.name);
     } catch (error) {
       console.error('Erro ao carregar pipeline:', error);
       toast.error('Erro ao carregar pipeline');
@@ -110,13 +114,23 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
       return;
     }
 
+    // ✅ ALTO 2 (CR): REMOVIDO - Validação client-side causa race condition (TOCTOU)
+    // Backend já valida corretamente com:
+    // - Validação "ao menos um campo" (linha 368)
+    // - Transação atômica (linha 506)
+    // - Revalidação de tenant (linha 503)
+    // Esta validação client-side criava falsa sensação de segurança e permitia perda de dados
+    // em edições concorrentes. Para UX melhor, implementar Optimistic Locking (ETag/Version).
+
     setIsSaving(true);
 
     try {
       const pipelineData: CreatePipelineRequest = extractDataFromYaml();
 
-      console.log('📤 Enviando dados do pipeline:', pipelineData);
-      console.log('🔧 YAML sendo enviado:', yamlContent.substring(0, 500) + '...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📤 Enviando dados do pipeline:', pipelineData);
+        console.log('🔧 YAML sendo enviado:', yamlContent.substring(0, 500) + '...');
+      }
 
       if (isEditMode && pipelineId) {
         await pipelineService.updatePipeline(pipelineId, pipelineData);
@@ -128,44 +142,24 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
       router.push(ROUTES.PIPELINES);
     } catch (error: any) {
-      console.error('Erro ao salvar pipeline:', error);
-
-      let errorMessage = 'Erro desconhecido';
-
-      if (error.response) {
-        // Erro da API com resposta
-        const status = error.response.status;
-        const data = error.response.data;
-
-        if (status === 400) {
-          // Bad Request - dados inválidos
-          if (data.errors && Array.isArray(data.errors)) {
-            errorMessage = `Dados inválidos:\n${data.errors.join('\n')}`;
-          } else if (data.error) {
-            errorMessage = `Dados inválidos: ${data.error}`;
-          } else if (data.message) {
-            errorMessage = `Dados inválidos: ${data.message}`;
-          } else {
-            errorMessage = 'Dados enviados são inválidos. Verifique o YAML e os campos obrigatórios.';
-          }
-        } else if (status === 401) {
-          errorMessage = 'Não autorizado. Faça login novamente.';
-        } else if (status === 403) {
-          errorMessage = 'Acesso negado para esta operação.';
-        } else if (status === 500) {
-          errorMessage = 'Erro interno do servidor. Tente novamente.';
-        } else {
-          errorMessage = `Erro ${status}: ${data.error || data.message || 'Erro no servidor'}`;
+      // ✅ ARCH-001: Usar formatação centralizada de erros
+      const errorMessage = formatApiError(error);
+      
+      toast.error(`Erro ao salvar pipeline:\n\n${errorMessage}`, {
+        duration: 6000, // Dar tempo para ler mensagens longas
+        style: {
+          maxWidth: '500px',
         }
-      } else if (error.request) {
-        // Erro de rede
-        errorMessage = 'Erro de conexão. Verifique sua internet e se o servidor está rodando.';
-      } else {
-        // Outro tipo de erro
-        errorMessage = error.message || 'Erro desconhecido';
+      });
+      
+      // Log detalhado apenas em dev
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Erro ao salvar pipeline:', {
+          error,
+          response: error.response?.data,
+          request: error.config?.data,
+        });
       }
-
-      toast.error(`Erro ao salvar pipeline: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }
@@ -217,17 +211,13 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
         </div>
 
         <div className="flex items-center space-x-3">
-
-          {isEditMode && (
-            <button
-              type="button"
-              onClick={handleTestRun}
+          {isEditMode && pipelineId && (
+            <DryRunManager
+              pipelineId={pipelineId}
+              pipelineName={pipelineName}
               disabled={!isValidYaml}
-              className="inline-flex items-center px-3 py-2 border border-green-300 dark:border-green-600 shadow-sm text-sm leading-4 font-medium rounded-md text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/50 hover:bg-green-100 dark:hover:bg-green-900/70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <PlayIcon className="h-4 w-4 mr-1" />
-              Testar Pipeline
-            </button>
+              yamlContent={yamlContent}
+            />
           )}
         </div>
       </div>
