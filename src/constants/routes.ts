@@ -34,6 +34,9 @@ export const ROUTES = {
   /** Analytics routes */
   ANALYTICS: '/dashboard/analytics',
 
+  /** Dead Letter Queue routes */
+  DLQ_ADMIN: '/dashboard/pipelines/dead-letter-queue',
+
   /** User management routes */
   USERS: '/dashboard/users',
 

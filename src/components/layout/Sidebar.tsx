@@ -20,6 +20,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   XMarkIcon,
+  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 
 interface NavigationItem {
@@ -46,6 +47,7 @@ const navigation: NavigationItem[] = [
     children: [
       { name: 'Analytics', href: ROUTES.ANALYTICS, icon: ChartBarIcon },
       { name: 'Executions & Logs', href: ROUTES.EXECUTIONS, icon: DocumentTextIcon },
+      { name: 'Dead Letter Queue', href: ROUTES.DLQ_ADMIN, icon: ExclamationCircleIcon },
     ],
   },
   {
