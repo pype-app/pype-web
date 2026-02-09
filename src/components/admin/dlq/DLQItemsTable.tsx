@@ -3,7 +3,6 @@
 import { DLQItem } from '@/services/dlq.service';
 import { ArrowPathIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface DLQItemsTableProps {
   items: DLQItem[];
@@ -50,8 +49,8 @@ export function DLQItemsTable({ items, onRetry, onDiscard, onViewDetails, isLoad
   if (items.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-        <p className="text-lg">Nenhum item na Dead Letter Queue</p>
-        <p className="text-sm mt-2">Ótimo! Não há mensagens com falha no momento.</p>
+        <p className="text-lg">No Dead Letter Queue items</p>
+        <p className="text-sm mt-2">Great! There are no failed messages at the moment.</p>
       </div>
     );
   }
@@ -112,8 +111,7 @@ export function DLQItemsTable({ items, onRetry, onDiscard, onViewDetails, isLoad
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                 {formatDistanceToNow(new Date(item.failedAt), { 
-                  addSuffix: true, 
-                  locale: ptBR 
+                  addSuffix: true
                 })}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

@@ -5,7 +5,7 @@ import { Dialog, Transition, Tab } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { DLQItem } from '@/services/dlq.service';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+
 
 interface DLQDetailModalProps {
   item: DLQItem | null;
@@ -160,12 +160,12 @@ export function DLQDetailModal({ item, isOpen, onClose }: DLQDetailModalProps) {
                         <InfoField label="Status" value={item.status} />
                         <InfoField 
                           label="Failed At" 
-                          value={format(new Date(item.failedAt), "PPpp", { locale: ptBR })} 
+                          value={format(new Date(item.failedAt), "PPpp")} 
                         />
                         {item.resolvedAt && (
                           <InfoField 
                             label="Resolved At" 
-                            value={format(new Date(item.resolvedAt), "PPpp", { locale: ptBR })} 
+                            value={format(new Date(item.resolvedAt), "PPpp")} 
                           />
                         )}
                       </div>
