@@ -40,8 +40,7 @@ export const dlqService = {
     status?: string;
     limit?: number;
   }): Promise<DLQListResponse> {
-    const response = await apiClient.get('/api/dead-letter-queue', { params });
-    return response.data;
+    return await apiClient.get<DLQListResponse>('/api/dead-letter-queue', { params });
   },
 
   /**
@@ -49,8 +48,7 @@ export const dlqService = {
    * GET /api/dead-letter-queue/{id}
    */
   async getById(id: string): Promise<DLQItem> {
-    const response = await apiClient.get(`/api/dead-letter-queue/${id}`);
-    return response.data;
+    return await apiClient.get<DLQItem>(`/api/dead-letter-queue/${id}`);
   },
 
   /**
@@ -58,8 +56,7 @@ export const dlqService = {
    * POST /api/dead-letter-queue/{id}/retry
    */
   async retry(id: string): Promise<{ message: string; jobId: string; newStatus: string }> {
-    const response = await apiClient.post(`/api/dead-letter-queue/${id}/retry`);
-    return response.data;
+    return await apiClient.post<{ message: string; jobId: string; newStatus: string }>(`/api/dead-letter-queue/${id}/retry`);
   },
 
   /**
@@ -67,10 +64,9 @@ export const dlqService = {
    * DELETE /api/dead-letter-queue/{id}
    */
   async discard(id: string, resolvedByUserId?: string): Promise<{ message: string }> {
-    const response = await apiClient.delete(`/api/dead-letter-queue/${id}`, {
+    return await apiClient.delete<{ message: string }>(`/api/dead-letter-queue/${id}`, {
       params: { resolvedByUserId }
     });
-    return response.data;
   },
 
   /**
@@ -78,9 +74,8 @@ export const dlqService = {
    * GET /api/dead-letter-queue/stats
    */
   async getStats(executionId?: string): Promise<DLQStats> {
-    const response = await apiClient.get('/api/dead-letter-queue/stats', {
+    return await apiClient.get<DLQStats>('/api/dead-letter-queue/stats', {
       params: { executionId }
     });
-    return response.data;
   }
 };
