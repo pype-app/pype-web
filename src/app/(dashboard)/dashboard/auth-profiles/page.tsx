@@ -151,6 +151,7 @@ export default function AuthProfilesPage() {
   const [pageSize, setPageSize] = useState(10);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [loadingProfileDetails, setLoadingProfileDetails] = useState(false);
   const [editingProfile, setEditingProfile] = useState<AuthProfile | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [formFieldErrors, setFormFieldErrors] = useState<ProfileFormErrors>({});
@@ -217,6 +218,10 @@ export default function AuthProfilesPage() {
     setCurrentPage(1);
   }, [searchTerm, pageSize]);
 
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(Math.max(1, prev), totalPages));
+  }, [totalPages]);
+
   async function loadProfiles(): Promise<void> {
     try {
       setLoading(true);
@@ -242,17 +247,29 @@ export default function AuthProfilesPage() {
     setIsFormOpen(true);
   }
 
-  function openEditModal(profile: AuthProfile): void {
+  async function openEditModal(profile: AuthProfile): Promise<void> {
+    setLoadingProfileDetails(true);
     setEditingProfile(profile);
     setFormError(null);
     setFormFieldErrors({});
-    setForm({
-      name: profile.name,
-      authType: profile.authType,
-      description: profile.description ?? '',
-      configText: toPrettyJson(profile.config),
-    });
     setIsFormOpen(true);
+
+    try {
+      const fullProfile = await authProfilesService.getByName(profile.name);
+      setEditingProfile(fullProfile);
+      setForm({
+        name: fullProfile.name,
+        authType: fullProfile.authType,
+        description: fullProfile.description ?? '',
+        configText: toPrettyJson(fullProfile.config),
+      });
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Failed to load authentication profile details');
+      setFormError(message);
+      toast.error(message);
+    } finally {
+      setLoadingProfileDetails(false);
+    }
   }
 
   function closeFormModal(): void {
@@ -299,7 +316,7 @@ export default function AuthProfilesPage() {
   }
 
   async function handleSubmitForm(): Promise<void> {
-    if (!canManageProfiles) {
+    if (!canManageProfiles || loadingProfileDetails) {
       return;
     }
 
@@ -329,6 +346,11 @@ export default function AuthProfilesPage() {
 
     if (Array.isArray(parsedConfig) || parsedConfig === null) {
       setFormFieldErrors({ configText: 'Config must be a JSON object.' });
+      return;
+    }
+
+    if (Object.keys(parsedConfig).length === 0) {
+      setFormFieldErrors({ configText: 'Config cannot be empty.' });
       return;
     }
 
@@ -511,7 +533,7 @@ export default function AuthProfilesPage() {
                             <EyeIcon className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => openEditModal(profile)}
+                            onClick={() => void openEditModal(profile)}
                             className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                             title="Edit"
                           >
@@ -607,12 +629,18 @@ export default function AuthProfilesPage() {
                     {editingProfile ? 'Edit Authentication Profile' : 'Create Authentication Profile'}
                   </Dialog.Title>
 
+                  {loadingProfileDetails && (
+                    <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-2 text-sm text-blue-700">
+                      Loading profile details...
+                    </div>
+                  )}
+
                   <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="md:col-span-1">
                       <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
                       <input
                         value={form.name}
-                        disabled={Boolean(editingProfile) || saving}
+                        disabled={Boolean(editingProfile) || saving || loadingProfileDetails}
                         onChange={(e) => {
                           setForm((prev) => ({ ...prev, name: e.target.value }));
                           setFormFieldErrors((prev) => ({ ...prev, name: undefined }));
@@ -629,7 +657,7 @@ export default function AuthProfilesPage() {
                       <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Auth Type</label>
                       <select
                         value={form.authType}
-                        disabled={Boolean(editingProfile) || saving}
+                        disabled={Boolean(editingProfile) || saving || loadingProfileDetails}
                         onChange={(e) => handleAuthTypeChange(Number(e.target.value) as AuthType)}
                         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                       >
@@ -645,7 +673,7 @@ export default function AuthProfilesPage() {
                       <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                       <input
                         value={form.description}
-                        disabled={saving}
+                        disabled={saving || loadingProfileDetails}
                         onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                         placeholder="Optional profile description"
                         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
@@ -667,7 +695,7 @@ export default function AuthProfilesPage() {
                           options={{
                             minimap: { enabled: false },
                             fontSize: 13,
-                            readOnly: saving,
+                            readOnly: saving || loadingProfileDetails,
                             scrollBeyondLastLine: false,
                             formatOnPaste: true,
                             formatOnType: true,
@@ -707,7 +735,7 @@ export default function AuthProfilesPage() {
                     </button>
                     <button
                       onClick={() => void handleSubmitForm()}
-                      disabled={saving || !canManageProfiles}
+                      disabled={saving || loadingProfileDetails || !canManageProfiles}
                       className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
                     >
                       {saving ? 'Saving...' : editingProfile ? 'Save Changes' : 'Create Profile'}

@@ -61,10 +61,17 @@ function parseAuthType(value: unknown): AuthType {
 
 function normalizeAuthProfile(input: any): AuthProfile {
   const rawConfig = input?.config;
-  const parsedConfig =
-    typeof rawConfig === 'string'
-      ? (JSON.parse(rawConfig) as Record<string, unknown>)
-      : (rawConfig as Record<string, unknown> | undefined);
+  let parsedConfig: Record<string, unknown> | undefined;
+
+  if (typeof rawConfig === 'string') {
+    try {
+      parsedConfig = JSON.parse(rawConfig) as Record<string, unknown>;
+    } catch {
+      parsedConfig = {};
+    }
+  } else {
+    parsedConfig = rawConfig as Record<string, unknown> | undefined;
+  }
 
   return {
     id: input.id,
