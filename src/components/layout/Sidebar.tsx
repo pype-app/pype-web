@@ -55,6 +55,7 @@ const navigation: NavigationItem[] = [
     icon: WrenchScrewdriverIcon,
     children: [
       { name: 'Users', href: ROUTES.USERS, icon: UsersIcon },
+      { name: 'Authentication Profiles', href: ROUTES.AUTH_PROFILES, icon: KeyIcon },
       // { name: 'Settings', href: '/dashboard/settings', icon: Cog6ToothIcon }, // Oculto temporariamente para MVP
     ],
   },

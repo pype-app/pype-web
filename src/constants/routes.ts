@@ -39,6 +39,7 @@ export const ROUTES = {
 
   /** User management routes */
   USERS: '/dashboard/users',
+  AUTH_PROFILES: '/dashboard/auth-profiles',
 
   /** Settings routes */
   SETTINGS: '/dashboard/settings',
