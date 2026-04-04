@@ -90,13 +90,36 @@ function toPrettyJson(value: Record<string, unknown> | undefined): string {
   return JSON.stringify(value ?? {}, null, 2);
 }
 
-function getApiErrorMessage(error: any, fallback: string): string {
-  return (
-    error?.response?.data?.error ||
-    error?.response?.data?.message ||
-    error?.message ||
-    fallback
-  );
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (!error || typeof error !== 'object') {
+    return fallback;
+  }
+
+  const errorObject = error as {
+    response?: {
+      data?: {
+        error?: unknown;
+        message?: unknown;
+      };
+    };
+    message?: unknown;
+  };
+
+  const apiError = errorObject.response?.data?.error;
+  if (typeof apiError === 'string' && apiError.trim().length > 0) {
+    return apiError;
+  }
+
+  const apiMessage = errorObject.response?.data?.message;
+  if (typeof apiMessage === 'string' && apiMessage.trim().length > 0) {
+    return apiMessage;
+  }
+
+  if (typeof errorObject.message === 'string' && errorObject.message.trim().length > 0) {
+    return errorObject.message;
+  }
+
+  return fallback;
 }
 
 function getSecretKeys(authType: AuthType): string[] {
@@ -316,8 +339,13 @@ export default function AuthProfilesPage() {
     try {
       const payload = await authProfilesService.getHistory(profile.name);
       setHistoryEntries(payload);
-    } catch (error: any) {
-      if (error?.response?.status === 404) {
+    } catch (error) {
+      const status =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { status?: unknown } }).response?.status
+          : undefined;
+
+      if (status === 404) {
         setHistoryError('Version history endpoint is not available yet.');
       } else {
         setHistoryError(getApiErrorMessage(error, 'Failed to load version history.'));

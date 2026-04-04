@@ -59,8 +59,17 @@ function parseAuthType(value: unknown): AuthType {
   return AuthType.Login;
 }
 
-function normalizeAuthProfile(input: any): AuthProfile {
-  const rawConfig = input?.config;
+function asRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+
+  return {};
+}
+
+function normalizeAuthProfile(input: unknown): AuthProfile {
+  const source = asRecord(input);
+  const rawConfig = source.config;
   let parsedConfig: Record<string, unknown> | undefined;
 
   if (typeof rawConfig === 'string') {
@@ -68,24 +77,26 @@ function normalizeAuthProfile(input: any): AuthProfile {
       parsedConfig = JSON.parse(rawConfig) as Record<string, unknown>;
     } catch {
       console.warn(
-        `[authProfiles] Failed to parse config for profile "${input?.name}". Falling back to empty object.`
+        `[authProfiles] Failed to parse config for profile "${String(source.name ?? '')}". Falling back to empty object.`
       );
       parsedConfig = {};
     }
+  } else if (rawConfig && typeof rawConfig === 'object' && !Array.isArray(rawConfig)) {
+    parsedConfig = rawConfig as Record<string, unknown>;
   } else {
-    parsedConfig = rawConfig as Record<string, unknown> | undefined;
+    parsedConfig = undefined;
   }
 
   return {
-    id: input.id,
-    name: input.name,
-    authType: parseAuthType(input.authType),
-    description: input.description,
-    version: input.version,
-    usageCount: input.usageCount ?? 0,
+    id: typeof source.id === 'number' ? source.id : 0,
+    name: typeof source.name === 'string' ? source.name : '',
+    authType: parseAuthType(source.authType),
+    description: typeof source.description === 'string' ? source.description : undefined,
+    version: typeof source.version === 'number' ? source.version : 1,
+    usageCount: typeof source.usageCount === 'number' ? source.usageCount : 0,
     config: parsedConfig,
-    createdAt: input.createdAt,
-    updatedAt: input.updatedAt,
+    createdAt: typeof source.createdAt === 'string' ? source.createdAt : undefined,
+    updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : undefined,
   };
 }
 
@@ -95,7 +106,7 @@ export const authProfilesService = {
     if (!Array.isArray(response)) {
       throw new Error('Unexpected response shape from /api/auth-profiles');
     }
-    return response.map((item: any) => normalizeAuthProfile(item));
+    return response.map((item) => normalizeAuthProfile(item));
   },
 
   async getByName(name: string): Promise<AuthProfile> {
