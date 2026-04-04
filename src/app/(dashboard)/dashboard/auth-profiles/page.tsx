@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { toast } from 'react-hot-toast';
 import {
@@ -152,6 +152,7 @@ export default function AuthProfilesPage() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loadingProfileDetails, setLoadingProfileDetails] = useState(false);
+  const editRequestIdRef = useRef(0);
   const [editingProfile, setEditingProfile] = useState<AuthProfile | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [formFieldErrors, setFormFieldErrors] = useState<ProfileFormErrors>({});
@@ -248,6 +249,7 @@ export default function AuthProfilesPage() {
   }
 
   async function openEditModal(profile: AuthProfile): Promise<void> {
+    const requestId = ++editRequestIdRef.current;
     setLoadingProfileDetails(true);
     setEditingProfile(profile);
     setFormError(null);
@@ -256,6 +258,10 @@ export default function AuthProfilesPage() {
 
     try {
       const fullProfile = await authProfilesService.getByName(profile.name);
+
+      // Discard stale response if another edit was triggered while this one was in-flight
+      if (requestId !== editRequestIdRef.current) return;
+
       setEditingProfile(fullProfile);
       setForm({
         name: fullProfile.name,
@@ -264,11 +270,17 @@ export default function AuthProfilesPage() {
         configText: toPrettyJson(fullProfile.config),
       });
     } catch (error) {
+      if (requestId !== editRequestIdRef.current) return;
+
       const message = getApiErrorMessage(error, 'Failed to load authentication profile details');
-      setFormError(message);
       toast.error(message);
+      // Close modal immediately to prevent submitting stale form state
+      setIsFormOpen(false);
+      setEditingProfile(null);
     } finally {
-      setLoadingProfileDetails(false);
+      if (requestId === editRequestIdRef.current) {
+        setLoadingProfileDetails(false);
+      }
     }
   }
 

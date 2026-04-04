@@ -67,6 +67,9 @@ function normalizeAuthProfile(input: any): AuthProfile {
     try {
       parsedConfig = JSON.parse(rawConfig) as Record<string, unknown>;
     } catch {
+      console.warn(
+        `[authProfiles] Failed to parse config for profile "${input?.name}". Falling back to empty object.`
+      );
       parsedConfig = {};
     }
   } else {
@@ -89,6 +92,9 @@ function normalizeAuthProfile(input: any): AuthProfile {
 export const authProfilesService = {
   async getAll(): Promise<AuthProfile[]> {
     const response = await apiClient.get('/api/auth-profiles');
+    if (!Array.isArray(response)) {
+      throw new Error('Unexpected response shape from /api/auth-profiles');
+    }
     return response.map((item: any) => normalizeAuthProfile(item));
   },
 
