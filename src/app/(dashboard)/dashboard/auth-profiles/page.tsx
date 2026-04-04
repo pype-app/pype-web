@@ -422,9 +422,16 @@ export default function AuthProfilesPage() {
         variant: 'danger',
       },
       async () => {
-        await authProfilesService.delete(profile.name);
-        setProfiles((prev) => prev.filter((item) => item.id !== profile.id));
-        toast.success('Authentication profile deleted successfully');
+        try {
+          await authProfilesService.delete(profile.name);
+          setProfiles((prev) => prev.filter((item) => item.id !== profile.id));
+          toast.success('Authentication profile deleted successfully');
+        } catch (error) {
+          const message = getApiErrorMessage(error, 'Failed to delete authentication profile');
+          toast.error(message);
+          // Keep confirmation dialog open for retry after a backend rejection.
+          throw error;
+        }
       }
     );
   }

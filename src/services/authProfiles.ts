@@ -115,7 +115,15 @@ export const authProfilesService = {
 
   async getHistory(name: string): Promise<AuthProfileHistoryEntry[]> {
     const response = await apiClient.get(`/api/auth-profiles/${encodeURIComponent(name)}/history`);
-    return (response ?? []) as AuthProfileHistoryEntry[];
+    if (!response) {
+      return [];
+    }
+
+    if (!Array.isArray(response)) {
+      throw new Error('Unexpected response shape from /api/auth-profiles/{name}/history');
+    }
+
+    return response as AuthProfileHistoryEntry[];
   },
 
   async delete(name: string): Promise<void> {
