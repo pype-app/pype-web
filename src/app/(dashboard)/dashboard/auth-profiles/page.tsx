@@ -25,6 +25,7 @@ import {
   AuthProfileHistoryEntry,
   UpdateAuthProfileRequest,
 } from '@/services/authProfiles';
+import { parse as parseYaml } from 'yaml';
 
 type ProfileFormState = {
   name: string;
@@ -38,47 +39,53 @@ type ProfileFormErrors = {
   configText?: string;
 };
 
-const AUTH_TYPE_OPTIONS: Array<{ value: AuthType; label: string; defaultConfig: Record<string, unknown> }> = [
+const AUTH_TYPE_OPTIONS: Array<{ value: AuthType; label: string; defaultConfig: string }> = [
   {
     value: AuthType.Login,
     label: 'Login',
-    defaultConfig: {
-      url: 'https://api.example.com/auth/login',
-      method: 'POST',
-      tokenPath: '$.token',
-    },
+    defaultConfig: `url: "https://api.example.com/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body: |
+  {
+    "email": "",
+    "password": ""
+  }
+tokenPath: "$.token"
+contextKey: "token"
+ttl: 3600
+`,
   },
   {
     value: AuthType.BearerStatic,
     label: 'Bearer Static',
-    defaultConfig: {
-      token: '${secret:API/TOKEN}',
-    },
+    defaultConfig: `token: "\${secret:API/TOKEN}"
+`,
   },
   {
     value: AuthType.OAuth2ClientCredentials,
     label: 'OAuth2 Client Credentials',
-    defaultConfig: {
-      clientId: 'client-id',
-      clientSecret: '${secret:API/CLIENT_SECRET}',
-      tokenEndpoint: 'https://api.example.com/oauth/token',
-    },
+    defaultConfig: `tokenUrl: "https://api.example.com/oauth/token"
+clientId: ""
+clientSecret: "\${secret:API/CLIENT_SECRET}"
+scope: ""
+grantType: client_credentials
+`,
   },
   {
     value: AuthType.ApiKey,
     label: 'API Key',
-    defaultConfig: {
-      key: '${secret:API/KEY}',
-      headerName: 'X-API-Key',
-    },
+    defaultConfig: `key: "\${secret:API/KEY}"
+headerName: "X-API-Key"
+`,
   },
   {
     value: AuthType.Basic,
     label: 'Basic',
-    defaultConfig: {
-      username: '${secret:API/USERNAME}',
-      password: '${secret:API/PASSWORD}',
-    },
+    defaultConfig: `username: "\${secret:API/USERNAME}"
+password: "\${secret:API/PASSWORD}"
+`,
   },
 ];
 
@@ -86,8 +93,8 @@ function authTypeLabel(type: AuthType): string {
   return AUTH_TYPE_OPTIONS.find((item) => item.value === type)?.label ?? 'Unknown';
 }
 
-function toPrettyJson(value: Record<string, unknown> | undefined): string {
-  return JSON.stringify(value ?? {}, null, 2);
+function toYamlConfig(value: string | undefined): string {
+  return value && value.trim().length > 0 ? value : '';
 }
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
@@ -183,7 +190,7 @@ export default function AuthProfilesPage() {
     name: '',
     authType: AuthType.Login,
     description: '',
-    configText: toPrettyJson(AUTH_TYPE_OPTIONS[0].defaultConfig),
+    configText: AUTH_TYPE_OPTIONS[0].defaultConfig,
   });
 
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -194,7 +201,7 @@ export default function AuthProfilesPage() {
 
   const maskedConfigPreview = useMemo(() => {
     try {
-      const parsed = JSON.parse(form.configText) as unknown;
+      const parsed = parseYaml(form.configText) as unknown;
       const masked = maskSecretsDeep(parsed, getSecretKeys(form.authType));
       return JSON.stringify(masked, null, 2);
     } catch {
@@ -266,7 +273,7 @@ export default function AuthProfilesPage() {
       name: '',
       authType: AuthType.Login,
       description: '',
-      configText: toPrettyJson(AUTH_TYPE_OPTIONS[0].defaultConfig),
+      configText: AUTH_TYPE_OPTIONS[0].defaultConfig,
     });
     setIsFormOpen(true);
   }
@@ -290,7 +297,7 @@ export default function AuthProfilesPage() {
         name: fullProfile.name,
         authType: fullProfile.authType,
         description: fullProfile.description ?? '',
-        configText: toPrettyJson(fullProfile.config),
+        configText: toYamlConfig(fullProfile.config),
       });
     } catch (error) {
       if (requestId !== editRequestIdRef.current) return;
@@ -324,7 +331,7 @@ export default function AuthProfilesPage() {
       return {
         ...prev,
         authType: nextType,
-        configText: editingProfile ? prev.configText : toPrettyJson(next?.defaultConfig),
+        configText: editingProfile ? prev.configText : (next?.defaultConfig ?? ''),
       };
     });
   }
@@ -376,21 +383,18 @@ export default function AuthProfilesPage() {
       return;
     }
 
-    let parsedConfig: Record<string, unknown>;
-    try {
-      parsedConfig = JSON.parse(form.configText) as Record<string, unknown>;
-    } catch {
-      setFormFieldErrors({ configText: 'Config must be a valid JSON object.' });
-      return;
-    }
+    const configText = form.configText.trim();
 
-    if (Array.isArray(parsedConfig) || parsedConfig === null) {
-      setFormFieldErrors({ configText: 'Config must be a JSON object.' });
-      return;
-    }
-
-    if (Object.keys(parsedConfig).length === 0) {
+    if (configText.length === 0) {
       setFormFieldErrors({ configText: 'Config cannot be empty.' });
+      return;
+    }
+
+    try {
+      parseYaml(configText);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Invalid YAML';
+      setFormFieldErrors({ configText: `Config must be valid YAML: ${message}` });
       return;
     }
 
@@ -402,7 +406,7 @@ export default function AuthProfilesPage() {
       if (editingProfile) {
         const payload: UpdateAuthProfileRequest = {
           description: form.description.trim() || undefined,
-          config: parsedConfig,
+          config: configText,
         };
 
         const updated = await authProfilesService.update(editingProfile.name, payload);
@@ -413,7 +417,7 @@ export default function AuthProfilesPage() {
           name: trimmedName,
           authType: form.authType,
           description: form.description.trim() || undefined,
-          config: parsedConfig,
+          config: configText,
         };
 
         const created = await authProfilesService.create(payload);
@@ -728,15 +732,15 @@ export default function AuthProfilesPage() {
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Config (JSON)</label>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Config (YAML)</label>
                       <div className="overflow-hidden rounded-lg border border-gray-300 dark:border-gray-600">
                         <Editor
                           height="320px"
-                          defaultLanguage="json"
-                          language="json"
+                          defaultLanguage="yaml"
+                          language="yaml"
                           value={form.configText}
                           onChange={(value) => {
-                            setForm((prev) => ({ ...prev, configText: value ?? '{}' }));
+                            setForm((prev) => ({ ...prev, configText: value ?? '' }));
                             setFormFieldErrors((prev) => ({ ...prev, configText: undefined }));
                           }}
                           options={{
@@ -759,7 +763,7 @@ export default function AuthProfilesPage() {
                           {maskedConfigPreview ? (
                             <pre className="max-h-40 overflow-auto text-xs text-gray-700 dark:text-gray-200">{maskedConfigPreview}</pre>
                           ) : (
-                            <p className="text-xs text-yellow-700 dark:text-yellow-400">Invalid JSON. Fix config to preview masked values.</p>
+                            <p className="text-xs text-yellow-700 dark:text-yellow-400">Invalid YAML. Fix config to preview masked values.</p>
                           )}
                         </div>
                       </div>

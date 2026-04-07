@@ -15,7 +15,7 @@ export interface AuthProfile {
   description?: string;
   version: number;
   usageCount: number;
-  config?: Record<string, unknown>;
+  config: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -24,12 +24,12 @@ export interface CreateAuthProfileRequest {
   name: string;
   authType: AuthType;
   description?: string;
-  config: Record<string, unknown>;
+  config: string;
 }
 
 export interface UpdateAuthProfileRequest {
   description?: string;
-  config: Record<string, unknown>;
+  config: string;
 }
 
 export interface AuthProfileHistoryEntry {
@@ -70,22 +70,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 function normalizeAuthProfile(input: unknown): AuthProfile {
   const source = asRecord(input);
   const rawConfig = source.config;
-  let parsedConfig: Record<string, unknown> | undefined;
-
-  if (typeof rawConfig === 'string') {
-    try {
-      parsedConfig = JSON.parse(rawConfig) as Record<string, unknown>;
-    } catch {
-      console.warn(
-        `[authProfiles] Failed to parse config for profile "${String(source.name ?? '')}". Falling back to empty object.`
-      );
-      parsedConfig = {};
-    }
-  } else if (rawConfig && typeof rawConfig === 'object' && !Array.isArray(rawConfig)) {
-    parsedConfig = rawConfig as Record<string, unknown>;
-  } else {
-    parsedConfig = undefined;
-  }
+  const yamlConfig = typeof rawConfig === 'string' ? rawConfig : '';
 
   return {
     id: typeof source.id === 'number' ? source.id : 0,
@@ -94,7 +79,7 @@ function normalizeAuthProfile(input: unknown): AuthProfile {
     description: typeof source.description === 'string' ? source.description : undefined,
     version: typeof source.version === 'number' ? source.version : 1,
     usageCount: typeof source.usageCount === 'number' ? source.usageCount : 0,
-    config: parsedConfig,
+    config: yamlConfig,
     createdAt: typeof source.createdAt === 'string' ? source.createdAt : undefined,
     updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : undefined,
   };
