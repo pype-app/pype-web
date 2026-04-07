@@ -39,10 +39,16 @@ type ProfileFormErrors = {
   configText?: string;
 };
 
-const AUTH_TYPE_OPTIONS: Array<{ value: AuthType; label: string; defaultConfig: string }> = [
+const AUTH_TYPE_OPTIONS: Array<{
+  value: AuthType;
+  label: string;
+  defaultConfig: string;
+  supportedInProfileRef: boolean;
+}> = [
   {
     value: AuthType.Login,
     label: 'Login',
+    supportedInProfileRef: true,
     defaultConfig: `url: "https://api.example.com/auth/login"
 method: POST
 headers:
@@ -59,13 +65,15 @@ ttl: 3600
   },
   {
     value: AuthType.BearerStatic,
-    label: 'Bearer Static',
+    label: 'Bearer Static (coming soon)',
+    supportedInProfileRef: false,
     defaultConfig: `token: "\${secret:API/TOKEN}"
 `,
   },
   {
     value: AuthType.OAuth2ClientCredentials,
-    label: 'OAuth2 Client Credentials',
+    label: 'OAuth2 Client Credentials (coming soon)',
+    supportedInProfileRef: false,
     defaultConfig: `tokenUrl: "https://api.example.com/oauth/token"
 clientId: ""
 clientSecret: "\${secret:API/CLIENT_SECRET}"
@@ -75,14 +83,16 @@ grantType: client_credentials
   },
   {
     value: AuthType.ApiKey,
-    label: 'API Key',
+    label: 'API Key (coming soon)',
+    supportedInProfileRef: false,
     defaultConfig: `key: "\${secret:API/KEY}"
 headerName: "X-API-Key"
 `,
   },
   {
     value: AuthType.Basic,
-    label: 'Basic',
+    label: 'Basic (coming soon)',
+    supportedInProfileRef: false,
     defaultConfig: `username: "\${secret:API/USERNAME}"
 password: "\${secret:API/PASSWORD}"
 `,
@@ -714,11 +724,18 @@ export default function AuthProfilesPage() {
                         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                       >
                         {AUTH_TYPE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
+                          <option
+                            key={option.value}
+                            value={option.value}
+                            disabled={!option.supportedInProfileRef}
+                          >
                             {option.label}
                           </option>
                         ))}
                       </select>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        profileRef currently supports only Login.
+                      </p>
                     </div>
 
                     <div className="md:col-span-2">
