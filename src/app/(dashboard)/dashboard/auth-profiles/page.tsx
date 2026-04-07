@@ -25,7 +25,7 @@ import {
   AuthProfileHistoryEntry,
   UpdateAuthProfileRequest,
 } from '@/services/authProfiles';
-import { parse as parseYaml } from 'yaml';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 type ProfileFormState = {
   name: string;
@@ -138,7 +138,7 @@ function getSecretKeys(authType: AuthType): string[] {
     case AuthType.OAuth2ClientCredentials:
       return ['clientSecret', 'token'];
     case AuthType.ApiKey:
-      return ['key', 'apiKey'];
+      return ['key'];
     case AuthType.Basic:
       return ['password'];
     default:
@@ -157,7 +157,8 @@ function maskSecretsDeep(value: unknown, secretKeys: string[]): unknown {
 
     for (const [key, raw] of Object.entries(obj)) {
       if (secretKeys.includes(key)) {
-        masked[key] = '***';
+        const stringValue = typeof raw === 'string' ? raw : '';
+        masked[key] = stringValue.startsWith('${') ? raw : '***';
       } else {
         masked[key] = maskSecretsDeep(raw, secretKeys);
       }
@@ -203,7 +204,7 @@ export default function AuthProfilesPage() {
     try {
       const parsed = parseYaml(form.configText) as unknown;
       const masked = maskSecretsDeep(parsed, getSecretKeys(form.authType));
-      return JSON.stringify(masked, null, 2);
+      return stringifyYaml(masked);
     } catch {
       return null;
     }
