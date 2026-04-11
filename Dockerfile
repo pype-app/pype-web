@@ -23,6 +23,7 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine
 
+# Set working directory
 WORKDIR /app
 
 # Environment variables with default values
