@@ -90,7 +90,7 @@ function LogModal({
 
     try {
       setLoading(true);
-      const result = await apiClient.get(`/api/logs/execution/${execution.id}`);
+      const result = await apiClient.get<PipelineExecutionLog[]>(`/api/logs/execution/${execution.id}`);
       setLogs(result || []);
     } catch (error) {
       console.error('Error fetching logs:', error);
@@ -229,7 +229,7 @@ export default function ExecutionsPage() {
       if (showLoading) {
         setLoading(true);
       }
-      const result = await apiClient.get('/api/executions');
+      const result = await apiClient.get<PipelineExecution[]>('/api/executions');
       setExecutions(result || []);
     } catch (error) {
       console.error('Error fetching executions:', error);

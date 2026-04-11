@@ -54,25 +54,25 @@ export interface UserWithStatus extends User {
 export const usersService = {
   // Get all users for current tenant
   async getAll(): Promise<UserWithStatus[]> {
-    const users = await apiClient.get('/api/users');
+    const users = await apiClient.get<UserWithStatus[]>('/api/users');
     return users.map(normalizeUserResponse);
   },
 
   // Get user by ID
   async getById(id: string): Promise<UserWithStatus> {
-    const user = await apiClient.get(`/api/users/${id}`);
+    const user = await apiClient.get<UserWithStatus>(`/api/users/${id}`);
     return normalizeUserResponse(user);
   },
 
   // Create new user
   async create(data: CreateUserRequest): Promise<UserWithStatus> {
-    const user = await apiClient.post('/api/users', data);
+    const user = await apiClient.post<UserWithStatus>('/api/users', data);
     return normalizeUserResponse(user);
   },
 
   // Update existing user
   async update(id: string, data: UpdateUserRequest): Promise<UserWithStatus> {
-    const user = await apiClient.put(`/api/users/${id}`, data);
+    const user = await apiClient.put<UserWithStatus>(`/api/users/${id}`, data);
     return normalizeUserResponse(user);
   },
 

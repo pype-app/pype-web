@@ -9,6 +9,7 @@ jest.mock('react-hot-toast', () => ({
   default: {
     custom: jest.fn(),
     error: jest.fn(),
+    dismiss: jest.fn(),
   },
 }));
 
@@ -74,14 +75,14 @@ describe('useErrorHandler Hook', () => {
     expect(result.current.errorHistory[0]).toEqual(mockError);
   });
 
-  it('calls toast.error when showing error', () => {
+  it('calls toast.custom when showing error', () => {
     const { result } = renderHook(() => useErrorHandler());
     
     act(() => {
       result.current.showError(mockError);
     });
 
-    expect(toast.error).toHaveBeenCalled();
+    expect(toast.custom).toHaveBeenCalled();
   });
 
   it('uses longer duration for 5xx errors', () => {
@@ -96,8 +97,8 @@ describe('useErrorHandler Hook', () => {
       result.current.showError(serverError);
     });
 
-    expect(toast.error).toHaveBeenCalledWith(
-      expect.any(String),
+    expect(toast.custom).toHaveBeenCalledWith(
+      expect.any(Function),
       expect.objectContaining({ duration: 10000 })
     );
   });
@@ -109,8 +110,8 @@ describe('useErrorHandler Hook', () => {
       result.current.showError(mockError);
     });
 
-    expect(toast.error).toHaveBeenCalledWith(
-      expect.any(String),
+    expect(toast.custom).toHaveBeenCalledWith(
+      expect.any(Function),
       expect.objectContaining({ duration: 5000 })
     );
   });

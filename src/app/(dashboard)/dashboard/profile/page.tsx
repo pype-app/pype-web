@@ -16,6 +16,19 @@ import {
     KeyIcon,
 } from '@heroicons/react/24/outline';
 
+interface AuditLogItem {
+    id: string;
+    action?: string;
+    entityType?: string;
+    entityName?: string;
+    performedByUserId?: string;
+    timestamp: string;
+}
+
+interface AuditLogsResponse {
+    items?: AuditLogItem[];
+}
+
 export default function ProfilePage() {
     const { user, refreshUserData } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,7 +71,7 @@ export default function ProfilePage() {
         setLoadingTimeline(true);
         try {
             // Fetch audit logs for user activities
-            const response = await apiClient.get('/api/audit-logs', {
+            const response = await apiClient.get<AuditLogsResponse>('/api/audit-logs', {
                 params: {
                     pageSize: 10,
                     pageNumber: 1,
@@ -91,7 +104,7 @@ export default function ProfilePage() {
 
             // Parse audit logs
             if (response.items && Array.isArray(response.items)) {
-                response.items.forEach((log: any) => {
+                response.items.forEach((log) => {
                     const action = log.action?.toLowerCase() || '';
                     const entityType = log.entityType?.toLowerCase() || '';
                     

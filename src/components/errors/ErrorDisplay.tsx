@@ -1,28 +1,24 @@
 'use client';
 
 import React from 'react';
-import { AlertCircle, AlertTriangle, Info, XCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { ErrorResponseDto } from '@/types/errors';
 import { cn } from '@/lib/utils';
+import { ErrorSuggestionButton } from './ErrorSuggestionButton';
 
 /**
  * Sanitizes text to prevent XSS attacks.
- * Removes HTML tags and dangerous characters.
+ * Preserve normal punctuation while escaping HTML-significant characters.
  */
 const sanitizeText = (text: string): string => {
   if (typeof text !== 'string') return '';
-  return text.replace(/[<>"'&]/g, (char) => {
-    const entities: Record<string, string> = {
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;',
-      '&': '&amp;',
-    };
-    return entities[char] || char;
-  });
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .trim();
 };
 
 /**
@@ -59,6 +55,18 @@ const ERROR_COLORS = {
   500: 'bg-red-50 border-red-200 text-red-900',
 } as const;
 
+function getAlertVariant(status: number): 'error' | 'warning' | 'info' {
+  if (status >= 500 || status === 401 || status === 403) {
+    return 'error';
+  }
+
+  if (status === 404) {
+    return 'info';
+  }
+
+  return 'warning';
+}
+
 export function ErrorDisplay({
   error,
   onApplySuggestion,
@@ -68,15 +76,16 @@ export function ErrorDisplay({
 }: ErrorDisplayProps) {
   const Icon = ERROR_ICONS[error.code as keyof typeof ERROR_ICONS] || AlertCircle;
   const colorClass = ERROR_COLORS[error.status as keyof typeof ERROR_COLORS] || ERROR_COLORS[500];
+  const alertVariant = getAlertVariant(error.status);
 
   // Extract suggestion from first item if available
   const primarySuggestion = error.suggestions?.[0]?.match(/'([^']+)'/)?.[1];
 
   return (
-    <Alert className={cn(colorClass, 'relative', className)}>
+    <Alert className={cn(colorClass, 'relative', className)} variant={alertVariant}>
       <Icon className="h-5 w-5" />
       <AlertTitle className="flex items-center justify-between">
-        {error.title}
+        {sanitizeText(error.title)}
         {onClose && (
           <Button
             variant="ghost"
@@ -89,7 +98,7 @@ export function ErrorDisplay({
         )}
       </AlertTitle>
       <AlertDescription className="mt-2 space-y-3">
-        <p className="text-sm">{error.detail}</p>
+        <p className="text-sm">{sanitizeText(error.detail)}</p>
 
         {/* Suggestions */}
         {error.suggestions && error.suggestions.length > 0 && (
@@ -97,7 +106,7 @@ export function ErrorDisplay({
             <p className="text-sm font-semibold">💡 Suggestions:</p>
             <ul className="list-disc list-inside space-y-1 text-sm">
               {error.suggestions.map((suggestion, idx) => (
-                <li key={idx}>{suggestion}</li>
+                <li key={`${suggestion}-${idx}`}>{sanitizeText(suggestion)}</li>
               ))}
             </ul>
           </div>
@@ -108,7 +117,7 @@ export function ErrorDisplay({
           <div className="space-y-2">
             <p className="text-sm font-semibold">📚 Available connectors:</p>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              {error.context.availableConnectors.map((connector: any, idx: number) => (
+              {error.context.availableConnectors.map((connector: { type?: string; name?: string }, idx: number) => (
                 <li key={idx}>
                   <code className="bg-black/10 px-1 rounded">{sanitizeText(connector.type || '')}</code> - {sanitizeText(connector.name || '')}
                 </li>
@@ -157,13 +166,7 @@ export function ErrorDisplay({
           )}
 
           {primarySuggestion && onApplySuggestion && (
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() => onApplySuggestion(primarySuggestion)}
-            >
-              ✨ Apply Suggestion: {primarySuggestion}
-            </Button>
+            <ErrorSuggestionButton suggestion={primarySuggestion} onApply={onApplySuggestion} />
           )}
         </div>
       </AlertDescription>
