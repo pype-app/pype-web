@@ -10,26 +10,24 @@ export interface ErrorResponseDto {
   traceId?: string;
 }
 
-// 🆕 BUG-001: Enriched validation error from backend
+// Validation error shared by backend responses and Monaco editor markers.
 export interface ValidationError {
-  path: string;              // Caminho JSON do campo (ex: "steps[0].source.type")
-  kind: string;              // Tipo do erro (ex: "PropertyRequired", "YamlSyntaxError")
-  message: string;           // Mensagem traduzida em português
-  suggestion?: string;       // Sugestão acionável de correção
-  line?: number;             // Linha do erro (1-based)
-  column?: number;           // Coluna do erro (1-based)
-  yamlSnippet?: string;      // Trecho do YAML com contexto (3-5 linhas)
-  field?: string;            // Campo específico com erro (ex: "type")
-  expectedType?: string;     // Tipo esperado (ex: "string", "number", "boolean")
+  message: string;
+  path?: string;
+  kind?: string;
+  line?: number;
+  column?: number;
+  suggestion?: string;
+  yamlSnippet?: string;
+  field?: string;
+  expectedType?: string;
 }
 
-// 🆕 BUG-001: Pipeline validation response from backend
 export interface PipelineValidationResponse {
   isValid: boolean;
   errors?: ValidationError[];
 }
 
-// Re-export para facilitar imports
 export type { ValidationError as EnrichedValidationError };
 export type { PipelineValidationResponse as ValidationResponse };
 

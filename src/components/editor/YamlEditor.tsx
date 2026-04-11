@@ -1,8 +1,10 @@
 'use client';
 
 import { Editor } from '@monaco-editor/react';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { type editor as MonacoEditor } from 'monaco-editor';
 import * as yaml from 'js-yaml';
+import { useMonacoValidation } from '@/hooks/useMonacoValidation';
 import { ValidationError } from '@/types/errors';
 
 interface YamlEditorProps {
@@ -11,7 +13,12 @@ interface YamlEditorProps {
   height?: string;
   readOnly?: boolean;
   onValidationChange?: (isValid: boolean, errors: string[]) => void;
-  validationErrors?: ValidationError[]; // 🆕 BUG-001: Erros enriquecidos do backend
+  validationErrors?: ValidationError[];
+}
+
+interface LocalValidationResult {
+  isValid: boolean;
+  errors: string[];
 }
 
 export default function YamlEditor({
@@ -20,39 +27,57 @@ export default function YamlEditor({
   height = '400px',
   readOnly = false,
   onValidationChange,
-  validationErrors, // 🆕 BUG-001
+  validationErrors,
 }: YamlEditorProps) {
   const [editorTheme, setEditorTheme] = useState('vs-light');
-  const [isEditorReady, setIsEditorReady] = useState(false);
-  const editorRef = useRef<any>(null); // 🆕 BUG-001: Referência ao editor
-  const monacoRef = useRef<any>(null); // 🆕 BUG-001: Referência ao monaco
+  const [editorInstance, setEditorInstance] = useState<MonacoEditor.IStandaloneCodeEditor | null>(null);
+  const [localErrors, setLocalErrors] = useState<string[]>([]);
+  const [isLocallyValid, setIsLocallyValid] = useState(true);
+  const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<any>(null);
+  const {
+    validateYAML: validateWithBackend,
+    validationErrors: semanticValidationErrors,
+    clearValidation,
+  } = useMonacoValidation(editorInstance, { debounceMs: 500 });
 
   useEffect(() => {
-    // Detect system theme or use light as default
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setEditorTheme(prefersDark ? 'vs-dark' : 'vs-light');
   }, []);
 
-  // 🆕 BUG-001: Atualizar markers quando validationErrors mudar
   useEffect(() => {
     if (editorRef.current && monacoRef.current && validationErrors) {
       setValidationMarkers(validationErrors);
     }
   }, [validationErrors]);
 
-  // 🆕 BUG-001: Definir markers de validação no editor
+  useEffect(() => {
+    if (!onValidationChange) {
+      return;
+    }
+
+    const semanticErrors = semanticValidationErrors.map((error) => error.detail);
+    const combinedErrors = [...localErrors, ...semanticErrors];
+    onValidationChange(isLocallyValid && semanticErrors.length === 0, combinedErrors);
+  }, [isLocallyValid, localErrors, onValidationChange, semanticValidationErrors]);
+
   const setValidationMarkers = (errors: ValidationError[]) => {
-    if (!editorRef.current || !monacoRef.current) return;
+    if (!editorRef.current || !monacoRef.current) {
+      return;
+    }
 
     const model = editorRef.current.getModel();
-    if (!model) return;
+    if (!model) {
+      return;
+    }
 
-    const markers = errors.map(error => ({
+    const markers = errors.map((error) => ({
       startLineNumber: error.line || 1,
       startColumn: error.column || 1,
       endLineNumber: error.line || 1,
-      endColumn: (error.column || 1) + 50, // Destacar linha inteira
-      message: error.message + (error.suggestion ? `\n\n💡 Sugestão: ${error.suggestion}` : ''),
+      endColumn: (error.column || 1) + 50,
+      message: error.message + (error.suggestion ? `\n\nSuggestion: ${error.suggestion}` : ''),
       severity: monacoRef.current.MarkerSeverity.Error,
       source: 'pype-validator',
     }));
@@ -60,156 +85,145 @@ export default function YamlEditor({
     monacoRef.current.editor.setModelMarkers(model, 'pype-validator', markers);
   };
 
-  // 🆕 BUG-001: Limpar markers
-  const clearValidationMarkers = () => {
-    if (!editorRef.current || !monacoRef.current) return;
+  const runLocalValidation = (content: string): LocalValidationResult => {
+    const errors: string[] = [];
+    let isValid = true;
 
-    const model = editorRef.current.getModel();
-    if (!model) return;
+    if (!content.trim()) {
+      setLocalErrors([]);
+      setIsLocallyValid(true);
+      return { isValid: true, errors: [] };
+    }
 
-    monacoRef.current.editor.setModelMarkers(model, 'pype-validator', []);
+    try {
+      yaml.load(content);
+    } catch (error: unknown) {
+      isValid = false;
+      const message = error instanceof Error ? error.message : 'Unknown YAML parsing error';
+      errors.push(`YAML Syntax Error: ${message}`);
+    }
+
+    try {
+      const parsed = yaml.load(content) as Record<string, unknown> | undefined;
+      const steps = Array.isArray(parsed?.steps) ? parsed.steps : undefined;
+
+      if (parsed && typeof parsed === 'object') {
+        if (!parsed.pipeline) {
+          errors.push('Pipeline must have a "pipeline" field (unique ID)');
+          isValid = false;
+        }
+
+        if (!parsed.name) {
+          errors.push('Pipeline must have a "name" field');
+          isValid = false;
+        }
+
+        if (!parsed.version) {
+          errors.push('Pipeline must have a "version" field');
+          isValid = false;
+        }
+
+        if (!steps) {
+          errors.push('Pipeline must have a "steps" array');
+          isValid = false;
+        }
+
+        steps?.forEach((step, index) => {
+          const stepConfig = step as Record<string, any>;
+          const stepNum = index + 1;
+          let hasValidStepType = false;
+
+          if (stepConfig.source) {
+            hasValidStepType = true;
+            if (!stepConfig.source.type) {
+              errors.push(`Step ${stepNum} source must have a "type" field`);
+              isValid = false;
+            }
+          }
+
+          if (stepConfig.auth) {
+            hasValidStepType = true;
+            if (!stepConfig.auth.type) {
+              errors.push(`Step ${stepNum} auth must have a "type" field`);
+              isValid = false;
+            }
+          }
+
+          if (stepConfig.transform) {
+            hasValidStepType = true;
+            if (!stepConfig.transform.map && !stepConfig.transform.script) {
+              errors.push(`Step ${stepNum} transform must have a "map" or "script" field`);
+              isValid = false;
+            }
+          }
+
+          if (stepConfig.validate) {
+            hasValidStepType = true;
+            if (!stepConfig.validate.rules || !Array.isArray(stepConfig.validate.rules)) {
+              errors.push(`Step ${stepNum} validate must have a "rules" array`);
+              isValid = false;
+            }
+          }
+
+          if (stepConfig.sink) {
+            hasValidStepType = true;
+            if (!stepConfig.sink.type) {
+              errors.push(`Step ${stepNum} sink must have a "type" field`);
+              isValid = false;
+            }
+          }
+
+          if (!hasValidStepType) {
+            errors.push(`Step ${stepNum} must have one of: source, transform, validate, sink, or auth`);
+            isValid = false;
+          }
+        });
+      }
+    } catch {
+      // Syntax errors are already handled above.
+    }
+
+    setLocalErrors(errors);
+    setIsLocallyValid(isValid);
+
+    return { isValid, errors };
   };
 
   const handleEditorChange = (newValue: string | undefined) => {
     const content = newValue || '';
     onChange(content);
 
-    // Validar YAML em tempo real
-    if (onValidationChange) {
-      validateYaml(content);
+    const validationResult = runLocalValidation(content);
+    if (validationResult.isValid) {
+      validateWithBackend(content);
+    } else {
+      clearValidation();
     }
   };
 
-  const validateYaml = (content: string) => {
-    const errors: string[] = [];
-    let isValid = true;
-
-    if (!content.trim()) {
-      onValidationChange?.(true, []);
-      return;
-    }
+  const handleEditorDidMount = async (editor: MonacoEditor.IStandaloneCodeEditor, monaco: any) => {
+    setEditorInstance(editor);
+    editorRef.current = editor;
+    monacoRef.current = monaco;
 
     try {
-      yaml.load(content);
-    } catch (error: any) {
-      isValid = false;
-      errors.push(`YAML Syntax Error: ${error.message}`);
-    }
-
-    // Validações específicas do pipeline
-    try {
-      const parsed = yaml.load(content) as any;
-      
-      if (parsed && typeof parsed === 'object') {
-        // Validar estrutura PipelineSpec
-        if (!parsed.pipeline) {
-          errors.push('Pipeline must have a "pipeline" field (unique ID)');
-          isValid = false;
-        }
-        
-        if (!parsed.name) {
-          errors.push('Pipeline must have a "name" field');
-          isValid = false;
-        }
-        
-        if (!parsed.version) {
-          errors.push('Pipeline must have a "version" field');
-          isValid = false;
-        }
-        
-        if (!parsed.steps || !Array.isArray(parsed.steps)) {
-          errors.push('Pipeline must have a "steps" array');
-          isValid = false;
-        }
-        
-        // Validar steps seguindo estrutura PipelineSpec
-        if (parsed.steps && Array.isArray(parsed.steps)) {
-          parsed.steps.forEach((step: any, index: number) => {
-            const stepNum = index + 1;
-            let hasValidStepType = false;
-            
-            // Check if the step has at least one valid type (source, transform, validate, sink, auth)
-            if (step.source) {
-              hasValidStepType = true;
-              if (!step.source.type) {
-                errors.push(`Step ${stepNum} source must have a "type" field`);
-                isValid = false;
-              }
-            }
-            
-            if (step.auth) {
-              hasValidStepType = true;
-              if (!step.auth.type) {
-                errors.push(`Step ${stepNum} auth must have a "type" field`);
-                isValid = false;
-              }
-            }
-            
-            if (step.transform) {
-              hasValidStepType = true;
-              // Transform pode ter "map" ou outras configurações
-              if (!step.transform.map && !step.transform.script) {
-                errors.push(`Step ${stepNum} transform must have a "map" or "script" field`);
-                isValid = false;
-              }
-            }
-            
-            if (step.validate) {
-              hasValidStepType = true;
-              if (!step.validate.rules || !Array.isArray(step.validate.rules)) {
-                errors.push(`Step ${stepNum} validate must have a "rules" array`);
-                isValid = false;
-              }
-            }
-            
-            if (step.sink) {
-              hasValidStepType = true;
-              if (!step.sink.type) {
-                errors.push(`Step ${stepNum} sink must have a "type" field`);
-                isValid = false;
-              }
-            }
-            
-            // Se não tem nenhum tipo válido, é erro
-            if (!hasValidStepType) {
-              errors.push(`Step ${stepNum} must have one of: source, transform, validate, sink, or auth`);
-              isValid = false;
-            }
-          });
-        }
-      }
-    } catch (error) {
-      // Já capturado na validação de sintaxe
-    }
-
-    onValidationChange?.(isValid, errors);
-  };
-
-  const handleEditorDidMount = async (editor: any, monaco: any) => {
-    setIsEditorReady(true);
-    editorRef.current = editor; // 🆕 BUG-001: Salvar referência
-    monacoRef.current = monaco; // 🆕 BUG-001: Salvar referência
-    
-    try {
-      console.log('🔧 Configurando Monaco Editor...');
-      
-      // Configurar validação básica primeiro
       editor.onDidChangeModelContent(() => {
         const content = editor.getValue();
-        if (onValidationChange) {
-          validateYaml(content);
+        const validationResult = runLocalValidation(content);
+
+        if (validationResult.isValid) {
+          validateWithBackend(content);
+        } else {
+          clearValidation();
         }
       });
 
-      // Configurar YAML language de forma simples
       monaco.languages.register({ id: 'yaml' });
-      
-      // Configuração básica de YAML sem monaco-yaml para evitar problemas com workers
       monaco.languages.setLanguageConfiguration('yaml', {
         brackets: [
           ['{', '}'],
           ['[', ']'],
-          ['(', ')']
+          ['(', ')'],
         ],
         autoClosingPairs: [
           { open: '{', close: '}' },
@@ -229,54 +243,35 @@ export default function YamlEditor({
           lineComment: '#',
         },
         indentationRules: {
-          increaseIndentPattern: /^(\s*)(.*:(\s*$|\s*[^#]*\s*$))/,
+          increaseIndentPattern: /^(\s*)(.*:(\s*$|\s*[^#]*\s*$))/, 
           decreaseIndentPattern: /^\s*$/,
         },
       });
 
-      // Syntax highlighting para YAML
       monaco.languages.setMonarchTokensProvider('yaml', {
         tokenizer: {
           root: [
-            // Chaves (keys)
             [/^(\s*)([\w\-\s]+)(\s*)(:)(\s*)/, ['white', 'key', 'white', 'delimiter', 'white']],
-            
-            // Lista items
             [/^(\s*)(-)(\s*)/, ['white', 'delimiter', 'white']],
-            
-            // Strings com aspas
             [/"[^"]*"/, 'string'],
             [/'[^']*'/, 'string'],
-            
-            // Números
             [/\b\d+(\.\d+)?\b/, 'number'],
-            
-            // Comentários
             [/#.*$/, 'comment'],
-            
-            // Booleanos e null
             [/\b(true|false|null|True|False|NULL)\b/, 'keyword'],
-            
-            // Operadores YAML
             [/[>|]/, 'operator'],
-            
-            // Whitespace
             [/\s+/, 'white'],
-            
-            // Outros
             [/./, 'white'],
           ],
         },
       });
 
-      // Configurar autocomplete personalizado para pipelines
       monaco.languages.registerCompletionItemProvider('yaml', {
-        provideCompletionItems: (model: any, position: any) => {
-          const suggestions = [
+        provideCompletionItems: (_model: unknown, position: { lineNumber: number; column: number }) => ({
+          suggestions: [
             {
               label: 'pipeline-template',
               kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: `name: "meu-pipeline"
+              insertText: `name: "my-pipeline"
 version: "1.0.0"
 description: "Pipeline description"
 
@@ -291,7 +286,7 @@ steps:
     config:
       connector: "http"
       url: "https://api.example.com/data"
-      
+
   - name: "step2"
     type: "transformer"
     config:
@@ -300,19 +295,19 @@ steps:
           id: item.id,
           name: item.name
         }));
-        
+
   - name: "step3"
     type: "destination"
     config:
       connector: "database"
       table: "processed_data"`,
-              documentation: 'Template completo de pipeline',
+              documentation: 'Complete pipeline template',
               range: {
                 startLineNumber: position.lineNumber,
                 endLineNumber: position.lineNumber,
                 startColumn: 1,
-                endColumn: position.column
-              }
+                endColumn: position.column,
+              },
             },
             {
               label: 'data-source',
@@ -331,8 +326,8 @@ steps:
                 startLineNumber: position.lineNumber,
                 endLineNumber: position.lineNumber,
                 startColumn: 1,
-                endColumn: position.column
-              }
+                endColumn: position.column,
+              },
             },
             {
               label: 'data-transformer',
@@ -351,8 +346,8 @@ steps:
                 startLineNumber: position.lineNumber,
                 endLineNumber: position.lineNumber,
                 startColumn: 1,
-                endColumn: position.column
-              }
+                endColumn: position.column,
+              },
             },
             {
               label: 'data-destination',
@@ -368,19 +363,14 @@ steps:
                 startLineNumber: position.lineNumber,
                 endLineNumber: position.lineNumber,
                 startColumn: 1,
-                endColumn: position.column
-              }
-            }
-          ];
-          
-          return { suggestions };
-        }
+                endColumn: position.column,
+              },
+            },
+          ],
+        }),
       });
-
-      console.log('✅ Monaco Editor configurado com sucesso (modo simplificado)!');
-
     } catch (error) {
-      console.error('❌ Erro ao configurar editor:', error);
+      console.error('Error configuring Monaco Editor:', error);
     }
   };
 
@@ -393,10 +383,12 @@ steps:
         value={value}
         onChange={handleEditorChange}
         onMount={handleEditorDidMount}
-        loading={<div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2">Carregando editor YAML...</span>
-        </div>}
+        loading={
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Loading YAML editor...</span>
+          </div>
+        }
         options={{
           readOnly,
           minimap: { enabled: false },
@@ -417,12 +409,11 @@ steps:
           quickSuggestions: {
             other: true,
             comments: false,
-            strings: false
+            strings: false,
           },
           suggestOnTriggerCharacters: true,
           acceptSuggestionOnEnter: 'on',
           snippetSuggestions: 'top',
-          // Desabilitar workers para evitar erros
           'semanticHighlighting.enabled': false,
         }}
       />

@@ -19,7 +19,10 @@ import { renderHook, act } from '@testing-library/react';
 jest.mock('react-hot-toast', () => ({
   __esModule: true,
   default: {
+    custom: jest.fn(),
     error: jest.fn(),
+    success: jest.fn(),
+    dismiss: jest.fn(),
   },
 }));
 
