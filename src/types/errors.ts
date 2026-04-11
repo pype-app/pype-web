@@ -10,6 +10,27 @@ export interface ErrorResponseDto {
   traceId?: string;
 }
 
+// Validation error shared by backend responses and Monaco editor markers.
+export interface ValidationError {
+  message: string;
+  path?: string;
+  kind?: string;
+  line?: number;
+  column?: number;
+  suggestion?: string;
+  yamlSnippet?: string;
+  field?: string;
+  expectedType?: string;
+}
+
+export interface PipelineValidationResponse {
+  isValid: boolean;
+  errors?: ValidationError[];
+}
+
+export type { ValidationError as EnrichedValidationError };
+export type { PipelineValidationResponse as ValidationResponse };
+
 // Connector info from backend context
 export interface ConnectorInfo {
   type: string;
@@ -32,3 +53,4 @@ export interface UseErrorHandlerReturn {
   clearError: () => void;
   isErrorVisible: boolean;
 }
+

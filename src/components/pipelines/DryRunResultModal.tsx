@@ -18,6 +18,7 @@ interface DryRunResultModalProps {
   onClose: () => void
   result: DryRunResult | null
   status?: DryRunStatus | null
+  error?: string | null
   pipelineName?: string
 }
 
@@ -40,13 +41,15 @@ export function DryRunResultModal({
   onClose,
   result,
   status,
+  error,
   pipelineName,
 }: DryRunResultModalProps) {
   // Show loading state if no result yet but we have a status
   const isLoading = !result && (status === 'pending' || status === 'running')
+  const hasFailed = status === 'failed' || error
   
-  // If modal is open but we have neither result nor status, don't render
-  if (!result && !status) {
+  // If modal is open but we have neither result nor status nor error, don't render
+  if (!result && !status && !error) {
     return null
   }
 
@@ -203,6 +206,30 @@ export function DryRunResultModal({
                           <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                           <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                           <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : error && !result ? (
+                    /* Validation Error State (no result object) */
+                    <div className="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-6">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <XCircleIcon className="h-5 w-5 text-red-400 dark:text-red-500" aria-hidden="true" />
+                        </div>
+                        <div className="ml-3 flex-1">
+                          <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                            Validation Error
+                          </h3>
+                          <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                            <pre className="whitespace-pre-wrap font-mono text-xs bg-white dark:bg-black/30 p-3 rounded border border-red-200 dark:border-red-800 overflow-x-auto">
+                              {error}
+                            </pre>
+                          </div>
+                          <div className="mt-4">
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                              Please fix the YAML errors above and try again.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>

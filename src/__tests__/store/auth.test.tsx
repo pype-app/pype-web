@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/auth'
 import { renderHook, act } from '@testing-library/react'
+import { TenantPlan, UserRole } from '@/types'
 
 // Mock da API
 jest.mock('@/lib/api-client', () => ({
@@ -11,6 +12,20 @@ jest.mock('@/lib/api-client', () => ({
 }))
 
 describe('AuthStore', () => {
+  const mockTenant = {
+    id: 'tenant-1',
+    name: 'Test Tenant',
+    subdomain: 'test-tenant',
+    plan: TenantPlan.Pro,
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    limits: {
+      maxUsers: 10,
+      maxPipelines: 50,
+      maxExecutionsPerMonth: 10000,
+    },
+  }
+
   beforeEach(() => {
     // Reset store state before each test
     useAuthStore.getState().logout()
@@ -50,10 +65,10 @@ describe('AuthStore', () => {
       email: 'test@example.com',
       firstName: 'John',
       lastName: 'Doe',
-      role: 1,
-      isActive: true,
+      role: UserRole.User,
       emailConfirmed: true,
       createdAt: '2024-01-01T00:00:00Z',
+      tenant: mockTenant,
     }
     
     act(() => {
@@ -93,10 +108,10 @@ describe('AuthStore', () => {
         email: 'test@example.com',
         firstName: 'John',
         lastName: 'Doe',
-        role: 1,
-        isActive: true,
+        role: UserRole.User,
         emailConfirmed: true,
         createdAt: '2024-01-01T00:00:00Z',
+        tenant: mockTenant,
       })
     })
     

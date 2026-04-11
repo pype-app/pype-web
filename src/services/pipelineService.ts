@@ -6,6 +6,7 @@ import {
   UpdatePipelineRequest,
   ApiResponse 
 } from '@/types';
+import { PipelineValidationResponse } from '@/types/errors'; // 🆕 BUG-001
 
 export interface PipelineListItem {
   id: string;
@@ -82,8 +83,8 @@ class PipelineService {
   }
 
   // Executa pipeline manualmente
-  async runPipeline(id: string): Promise<{ executionId: string; enqueued: boolean }> {
-    return await apiClient.post<{ executionId: string; enqueued: boolean }>(`${this.adminUrl}/${id}/run`);
+  async runPipeline(id: string): Promise<{ jobId: string; enqueued: boolean; message?: string }> {
+    return await apiClient.post<{ jobId: string; enqueued: boolean; message?: string }>(`${this.adminUrl}/${id}/run`);
   }
 
   // Suspende pipeline (desativa)
@@ -113,8 +114,8 @@ class PipelineService {
   }
 
   // Valida definição YAML do pipeline
-  async validateYaml(yamlDefinition: string): Promise<{ isValid: boolean; errors?: string[] }> {
-    return await apiClient.post<{ isValid: boolean; errors?: string[] }>(`${this.baseUrl}/validate`, {
+  async validateYaml(yamlDefinition: string): Promise<PipelineValidationResponse> {
+    return await apiClient.post<PipelineValidationResponse>(`${this.baseUrl}/validate`, {
       yamlDefinition
     });
   }

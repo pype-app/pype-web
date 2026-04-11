@@ -1,8 +1,10 @@
 import { create } from 'zustand';
+import { createElement } from 'react';
 import { persist } from 'zustand/middleware';
 import toast from 'react-hot-toast';
 import { ErrorResponseDto } from '@/types/errors';
 import { sanitizeErrorContext } from '@/lib/error-formatter';
+import { ErrorToast } from '@/components/errors/ErrorToast';
 
 interface ErrorState {
   currentError: ErrorResponseDto | null;
@@ -71,21 +73,31 @@ export const useErrorHandler = create<ErrorState>()(
           });
         }
 
-        // Show toast notification
-        // Duration: 10s for critical errors (5xx), 5s for others
+        // Show structured toast notification
         const duration = sanitizedError.status >= 500 ? 10000 : 5000;
+        const toastId = sanitizedError.traceId || sanitizedError.code;
 
-        // Show simple toast (avoiding JSX in hook for testing compatibility)
-        toast.error(
-          `${sanitizedError.title}: ${sanitizedError.detail.slice(0, 100)}${
-            sanitizedError.detail.length > 100 ? '...' : ''
-          }`,
-          {
-            duration,
-            position: 'top-right',
-            id: sanitizedError.code, // Dedupe by error code
-          }
-        );
+        if (typeof toast.custom === 'function') {
+          toast.custom(
+            (toastInstance) =>
+              createElement(ErrorToast, {
+                error: sanitizedError,
+                onClose: () => toast.dismiss(toastInstance.id),
+              }),
+            {
+              duration,
+              position: 'top-right',
+              id: toastId,
+            }
+          );
+          return;
+        }
+
+        toast.error(`${sanitizedError.title}: ${sanitizedError.detail}`, {
+          duration,
+          position: 'top-right',
+          id: toastId,
+        });
       },
 
       clearError: () =>

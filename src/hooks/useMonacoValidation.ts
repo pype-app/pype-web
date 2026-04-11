@@ -72,7 +72,8 @@ export function useMonacoValidation(
         { yamlDefinition: content },
         { 
           signal: newAbortController.signal,
-          timeout: 10000 // 10 seconds max (prevent hanging requests)
+          timeout: 10000,
+          skipGlobalErrorHandler: true,
         }
       );
 
