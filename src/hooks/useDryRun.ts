@@ -236,6 +236,11 @@ export function useDryRun(options: UseDryRunOptions = {}): UseDryRunReturn {
   /**
    * Start a new dry-run execution
    */
+  const isDryRunStatus = (value: unknown): value is DryRunStatus => {
+    const validStatuses: readonly DryRunStatus[] = ['pending', 'running', 'completed', 'failed', 'cancelled']
+    return typeof value === 'string' && validStatuses.includes(value as DryRunStatus)
+  }
+
   const startDryRun = useCallback(async (pipelineId: string, sampleSize: number, yamlOverride?: string) => {
     // Reset previous state
     setError(null)
@@ -264,8 +269,7 @@ export function useDryRun(options: UseDryRunOptions = {}): UseDryRunReturn {
       
       setDryRunId(newExecutionId)
       // Validar se status é um DryRunStatus válido, fallback para 'pending'
-      const validStatus = (['pending', 'running', 'completed', 'failed', 'cancelled'] as const)
-        .includes(responseStatus as any) ? responseStatus as DryRunStatus : 'pending'
+      const validStatus = isDryRunStatus(responseStatus) ? responseStatus : 'pending'
       setStatus(validStatus)
       
       // Notify parent that dry-run has started
