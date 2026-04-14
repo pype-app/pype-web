@@ -260,19 +260,19 @@ export function useDryRun(options: UseDryRunOptions = {}): UseDryRunReturn {
       if (!isMountedRef.current) return
 
       // Backend retorna 'executionId', não 'dryRunId'
-      const { executionId: newDryRunId, status: responseStatus } = response
+      const { executionId: newExecutionId, status: responseStatus } = response
       
-      setDryRunId(newDryRunId)
+      setDryRunId(newExecutionId)
       // Validar se status é um DryRunStatus válido, fallback para 'pending'
       const validStatus = (['pending', 'running', 'completed', 'failed', 'cancelled'] as const)
         .includes(responseStatus as any) ? responseStatus as DryRunStatus : 'pending'
       setStatus(validStatus)
       
       // Notify parent that dry-run has started
-      onStart?.(newDryRunId)
+      onStart?.(newExecutionId)
 
       // Start polling for status
-      startPolling(newDryRunId)
+      startPolling(newExecutionId)
     } catch (err: any) {
       if (!isMountedRef.current) return
       
