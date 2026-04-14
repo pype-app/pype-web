@@ -65,11 +65,8 @@ ErrorDisplay Component
 
 #### Hipótese 2: Merge Conflict Mal Resolvido
 ```diff
-<<<<<<< HEAD
-variant="primary"
-=======
-variant="default"
->>>>>>> feature/error-display
+- variant="default"
++ variant="primary"
 ```
 
 #### Hipótese 3: Copy-Paste de Outro Projeto
