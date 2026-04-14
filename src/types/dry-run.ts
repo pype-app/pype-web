@@ -127,7 +127,7 @@ export interface StartDryRunResponse {
   executionId: string
   
   /** Current execution status */
-  status: string
+  status: DryRunStatus
   
   /** Message confirming the dry-run was enqueued */
   message: string
