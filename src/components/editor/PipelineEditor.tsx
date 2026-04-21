@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import * as yaml from 'js-yaml';
 import { toast } from 'react-hot-toast';
@@ -24,6 +24,24 @@ interface PipelineEditorProps {
   pipelineId?: string; // Para modo de edição
 }
 
+function areStringArraysEqual(left: string[], right: string[]): boolean {
+  if (left === right) {
+    return true;
+  }
+
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
   const router = useRouter();
   const [yamlContent, setYamlContent] = useState('');
@@ -37,6 +55,11 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
   const [pipelineName, setPipelineName] = useState('Unnamed Pipeline');
   const [backendValidationErrors, setBackendValidationErrors] = useState<EnrichedValidationError[]>([]); // 🆕 BUG-001
   const [showValidationModal, setShowValidationModal] = useState(false); // 🆕 BUG-001: Modal de erros
+
+  const handleCloseValidationModal = () => {
+    setShowValidationModal(false);
+    setBackendValidationErrors([]);
+  };
 
   const isEditMode = !!pipelineId;
 
@@ -79,12 +102,18 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
     setSelectedTemplate('');
   };
 
-  const handleValidationChange = (isValid: boolean, errors: string[]) => {
-    setIsValidYaml(isValid);
-    setValidationErrors(errors);
-  };
+  const handleValidationChange = useCallback((isValid: boolean, errors: string[]) => {
+    setIsValidYaml((currentValue) => (currentValue === isValid ? currentValue : isValid));
+    setValidationErrors((currentErrors) => {
+      if (areStringArraysEqual(currentErrors, errors)) {
+        return currentErrors;
+      }
 
-  // Extrair dados do YAML para criar/atualizar pipeline
+      return errors;
+    });
+  }, []);
+
+  // Extract data from YAML to create/update pipeline
   const extractDataFromYaml = () => {
     try {
       const parsedYaml = yaml.load(yamlContent) as any;
@@ -93,38 +122,38 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
         name: parsedYaml.name || parsedYaml.pipeline || 'Unnamed Pipeline',
         description: parsedYaml.description || '',
         yamlDefinition: yamlContent,
-        isActive: parsedYaml.enabled !== false, // Default true, false apenas se explicitamente false
+        isActive: parsedYaml.enabled !== false, // Default true, false only if explicitly false
         cronExpression: parsedYaml.schedule || undefined,
         tags: parsedYaml.tags || undefined,
       };
     } catch (error) {
-      throw new Error('Erro ao processar YAML: ' + error);
+      throw new Error('Error processing YAML: ' + error);
     }
   };
 
   const handleSave = async () => {
     if (!isValidYaml) {
-      toast.error('Por favor, corrija os erros de validação antes de salvar.');
+      toast.error('Please correct validation errors before saving.');
       return;
     }
 
     if (!yamlContent.trim()) {
-      toast.error('O conteúdo YAML é obrigatório.');
+      toast.error('O conteúdo YAML is required.');
       return;
     }
 
-    // Validar se não há strings "[object Object]" no YAML
+    // Validar if not há strings "[object Object]" no YAML
     if (yamlContent.includes('[object Object]')) {
       toast.error('Erro no YAML: Objetos não serializados corretamente. Tente recriar o pipeline ou editar manualmente o YAML.');
       return;
     }
 
-    // ✅ ALTO 2 (CR): REMOVIDO - Validação client-side causa race condition (TOCTOU)
+    // ✅ ALTO 2 (CR): REMOVIDO - validation client-side causa race condition (TOCTOU)
     // Backend já valida corretamente com:
-    // - Validação "ao menos um campo" (linha 368)
+    // - validation "ao menos um campo" (linha 368)
     // - Transação atômica (linha 506)
-    // - Revalidação de tenant (linha 503)
-    // Esta validação client-side criava falsa sensação de segurança e permitia perda de dados
+    // - Revalidation de tenant (linha 503)
+    // Esta validation client-side criava falsa sensação de segurança e permitia perda de dados
     // em edições concorrentes. Para UX melhor, implementar Optimistic Locking (ETag/Version).
 
     setIsSaving(true);
@@ -169,16 +198,16 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
       // ✅ ARCH-001: Usar formatação centralizada de erros
       const errorMessage = formatApiError(error);
       
-      toast.error(`Erro ao salvar pipeline:\n\n${errorMessage}`, {
-        duration: 6000, // Dar tempo para ler mensagens longas
+      toast.error(`Error saving pipeline:\n\n${errorMessage}`, {
+        duration: 6000, // Give time to read long messages
         style: {
           maxWidth: '500px',
         }
       });
       
-      // Log detalhado apenas em dev
+      // Detailed log only in dev
       if (process.env.NODE_ENV === 'development') {
-        console.error('Erro ao salvar pipeline:', {
+        console.error('Error saving pipeline:', {
           error,
           response: error.response?.data,
           request: error.config?.data,
@@ -197,7 +226,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
     try {
       await pipelineService.runPipeline(pipelineId);
-      toast.success('Execução de teste iniciada! Verifique o status na lista de pipelines.');
+      toast.success('execution de teste iniciada! Verifique o status na lista de pipelines.');
     } catch (error: any) {
       console.error('Erro ao executar pipeline:', error);
       toast.error(`Erro ao executar pipeline: ${error.message || 'Erro desconhecido'}`);
@@ -215,10 +244,10 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
   return (
     <>
-      {/* 🆕 BUG-001: Modal de erros de validação */}
+      {/* 🆕 BUG-001: Modal de erros de validation */}
       <ValidationErrorModal
         isOpen={showValidationModal}
-        onClose={() => setShowValidationModal(false)}
+        onClose={handleCloseValidationModal}
         errors={backendValidationErrors}
       />
 
@@ -322,7 +351,7 @@ export default function PipelineEditor({ pipelineId }: PipelineEditorProps) {
               />
             </Suspense>
 
-            {/* Validação */}
+            {/* validation */}
             <div className="mt-4">
               <ValidationResults
                 isValid={isValidYaml}

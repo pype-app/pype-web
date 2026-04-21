@@ -13,6 +13,7 @@ import PipelineFilters from '@/components/pipelines/PipelineFilters';
 import Pagination from '@/components/ui/Pagination';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { PipelineListItem } from '@/services/pipelineService';
+import { ROUTES } from '@/constants/routes';
 
 export default function PipelinesPage() {
   const router = useRouter();
@@ -108,7 +109,7 @@ export default function PipelinesPage() {
             Refresh
           </button>
           <Link
-            href="/dashboard/pipelines/new"
+            href={ROUTES.PIPELINE_CREATE}
             className="inline-flex items-center rounded-md bg-blue-600 dark:bg-blue-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 dark:hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:focus-visible:outline-blue-400"
           >
             <PlusIcon className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
