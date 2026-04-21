@@ -375,7 +375,7 @@ steps:
   };
 
   return (
-    <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+    <div className="relative isolate z-0 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden max-w-full">
       <Editor
         height={height}
         defaultLanguage="yaml"

@@ -27,7 +27,7 @@ export function ValidationErrorModal({
   errors,
   title = 'Pipeline Validation Errors',
 }: ValidationErrorModalProps) {
-  if (!errors || errors.length === 0) {
+  if (!isOpen || !errors || errors.length === 0) {
     return null
   }
 
@@ -79,7 +79,7 @@ export function ValidationErrorModal({
                       className="rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
                       onClick={onClose}
                     >
-                      <span className="sr-only">Fechar</span>
+                      <span className="sr-only">Close</span>
                       <XMarkIcon className="h-6 w-6" />
                     </button>
                   </div>
