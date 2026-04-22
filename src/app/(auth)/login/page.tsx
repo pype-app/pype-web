@@ -24,6 +24,37 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, isLoading, error, clearError } = useAuthStore();
+  const [loginErrorMessage, setLoginErrorMessage] = useState<string | null>(null);
+
+  const getLoginErrorMessage = (requestError: unknown): string => {
+    if (typeof requestError !== 'object' || requestError === null) {
+      return 'Login failed. Please check your credentials.';
+    }
+
+    const maybeResponse = (requestError as { response?: { data?: unknown } }).response;
+    const responseData = maybeResponse?.data;
+
+    if (typeof responseData === 'string' && responseData.trim().length > 0) {
+      return responseData;
+    }
+
+    if (typeof responseData === 'object' && responseData !== null) {
+      const typedData = responseData as {
+        error?: string;
+        detail?: string;
+        title?: string;
+        message?: string;
+      };
+
+      return typedData.error
+        ?? typedData.detail
+        ?? typedData.title
+        ?? typedData.message
+        ?? 'Login failed. Please check your credentials.';
+    }
+
+    return 'Login failed. Please check your credentials.';
+  };
 
   useEffect(() => {
     const message = searchParams?.get('message');
@@ -52,6 +83,7 @@ export default function LoginPage() {
     try {
       clearError();
       clearErrors();
+      setLoginErrorMessage(null);
       
       // Get last used tenant from localStorage
       const lastTenant = typeof window !== 'undefined' ? localStorage.getItem('pype-last-tenant') : null;
@@ -66,12 +98,15 @@ export default function LoginPage() {
       
       // Only redirect on successful login
       toast.success('Login successful!');
-      router.push(ROUTES.DASHBOARD);
-    } catch (error: any) {
-      // Error is already set in authStore, just show toast
-      const errorMessage = error?.response?.data?.error || 'Login failed. Please check your credentials.';
-      toast.error(errorMessage);
-      // Don't redirect, let user see the error message
+      router.push(
+        useAuthStore.getState().user?.platformAccess
+          ? ROUTES.BACKOFFICE_DASHBOARD
+          : ROUTES.DASHBOARD
+      );
+    } catch (requestError: unknown) {
+      const errorMessage = getLoginErrorMessage(requestError);
+      setLoginErrorMessage(errorMessage);
+      toast.error(errorMessage, { duration: 6000, id: 'login-error' });
     }
   };
 
@@ -106,9 +141,9 @@ export default function LoginPage() {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {error && (
+          {(loginErrorMessage || error) && (
             <div className="rounded-md bg-red-50 dark:bg-red-900 p-4">
-              <div className="text-sm text-red-700 dark:text-red-200">{error}</div>
+              <div className="text-sm text-red-700 dark:text-red-200">{loginErrorMessage ?? error}</div>
             </div>
           )}
 

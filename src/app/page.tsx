@@ -7,15 +7,15 @@ import { ROUTES } from '@/constants';
 
 export default function HomePage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push(ROUTES.DASHBOARD);
+      router.push(user?.platformAccess ? ROUTES.BACKOFFICE_DASHBOARD : ROUTES.DASHBOARD);
     } else {
       router.push(ROUTES.LOGIN);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, user?.platformAccess]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">

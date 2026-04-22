@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { ROUTES } from '@/constants';
+import { useAuthStore } from '@/store/auth';
+import { UserRole } from '@/types';
 import {
   HomeIcon,
   CircleStackIcon,
@@ -21,6 +23,7 @@ import {
   ChevronRightIcon,
   XMarkIcon,
   ExclamationCircleIcon,
+  BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
 
 interface NavigationItem {
@@ -28,6 +31,8 @@ interface NavigationItem {
   href?: string;
   icon: React.ElementType;
   children?: NavigationItem[];
+  minRole?: UserRole;
+  requiresPlatformAccess?: boolean;
 }
 
 const navigation: NavigationItem[] = [
@@ -56,7 +61,17 @@ const navigation: NavigationItem[] = [
     children: [
       { name: 'Users', href: ROUTES.USERS, icon: UsersIcon },
       { name: 'Authentication Profiles', href: ROUTES.AUTH_PROFILES, icon: KeyIcon },
-      // { name: 'Settings', href: '/dashboard/settings', icon: Cog6ToothIcon }, // Oculto temporariamente para MVP
+    ],
+  },
+  {
+    name: 'Backoffice',
+    icon: BuildingOffice2Icon,
+    requiresPlatformAccess: true,
+    children: [
+      { name: 'Overview', href: ROUTES.BACKOFFICE_DASHBOARD, icon: ChartBarIcon },
+      { name: 'Customers', href: ROUTES.BACKOFFICE_CUSTOMERS, icon: UsersIcon },
+      { name: 'Tenants', href: ROUTES.BACKOFFICE_TENANTS, icon: BuildingOffice2Icon },
+      { name: 'Users', href: ROUTES.BACKOFFICE_USERS, icon: EyeIcon },
     ],
   },
 ];
@@ -73,6 +88,20 @@ interface SidebarProps {
 export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
+  const hasPlatformAccess = useAuthStore((state) => state.user?.platformAccess ?? false);
+  const isBackofficeContext = pathname.startsWith(ROUTES.BACKOFFICE);
+
+  const visibleNavigation = navigation.filter((item) => {
+    const isVisibleForRole = item.minRole === undefined || userRole >= item.minRole;
+    const isVisibleForPlatform = !item.requiresPlatformAccess || hasPlatformAccess;
+
+    if (isBackofficeContext) {
+      return item.requiresPlatformAccess && isVisibleForPlatform;
+    }
+
+    return isVisibleForRole && isVisibleForPlatform && !item.requiresPlatformAccess;
+  });
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => 
@@ -95,12 +124,12 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
 
   // Auto-expand active parent items
   React.useEffect(() => {
-    navigation.forEach(item => {
+    visibleNavigation.forEach(item => {
       if (item.children && isItemActive(item) && !expandedItems.includes(item.name)) {
         setExpandedItems(prev => [...prev, item.name]);
       }
     });
-  }, [pathname]);
+  }, [pathname, visibleNavigation, expandedItems]);
 
   const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 pb-4">
@@ -128,7 +157,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
         <ul role="list" className="flex flex-1 flex-col gap-y-7">
           <li>
             <ul role="list" className="-mx-2 space-y-1">
-              {navigation.map((item) => (
+              {visibleNavigation.map((item) => (
                 <li key={item.name}>
                   {item.children ? (
                     // Parent item with children
