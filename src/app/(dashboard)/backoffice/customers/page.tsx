@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
+import { toast } from 'react-hot-toast';
 import { backofficeService } from '@/services/backofficeService';
 import { BackofficeCustomer } from '@/types/backoffice';
 import { useAuthStore } from '@/store/auth';
@@ -18,19 +20,30 @@ import StatusBadge from '@/components/backoffice/StatusBadge';
 const PAGE_SIZE = 25;
 
 export default function BackofficeCustomersPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
   const canMutate = userRole >= UserRole.Owner;
 
+  const initialPage = Number(searchParams.get('page') ?? '1') || 1;
+  const initialStatus = (searchParams.get('status') as 'all' | 'active' | 'inactive' | null) ?? 'all';
+  const initialSearch = searchParams.get('search') ?? '';
+
   const [customers, setCustomers] = useState<BackofficeCustomer[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>(initialStatus);
+  const [search, setSearch] = useState(initialSearch);
+  const [searchInput, setSearchInput] = useState(initialSearch);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const returnParams = new URLSearchParams();
+  if (page > 1) returnParams.set('page', String(page));
+  if (statusFilter !== 'all') returnParams.set('status', statusFilter);
+  if (search) returnParams.set('search', search);
+  const returnQuery = returnParams.toString() ? `?${returnParams.toString()}` : '';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,6 +71,15 @@ export default function BackofficeCustomersPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set('page', String(page));
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (search) params.set('search', search);
+    const query = params.toString();
+    router.replace(query ? `?${query}` : '?', { scroll: false });
+  }, [page, statusFilter, search, router]);
+
   const handleSearch = () => {
     setSearch(searchInput);
     setPage(1);
@@ -76,8 +98,10 @@ export default function BackofficeCustomersPage() {
       setCustomers((prev) =>
         prev.map((c) => (c.id === customer.id ? { ...c, isActive: !c.isActive } : c))
       );
+      toast.success(`Customer ${customer.isActive ? 'deactivated' : 'activated'} successfully.`);
     } catch {
       setError('Failed to update customer status.');
+      toast.error('Failed to update customer status.');
     } finally {
       setTogglingId(null);
     }
@@ -182,7 +206,7 @@ export default function BackofficeCustomersPage() {
                   <td className="px-4 py-3">
                     <div>
                       <Link
-                        href={ROUTES.BACKOFFICE_CUSTOMER_DETAIL(customer.id)}
+                        href={`${ROUTES.BACKOFFICE_CUSTOMER_DETAIL(customer.id)}?back=${encodeURIComponent(returnQuery)}`}
                         className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         {customer.name}

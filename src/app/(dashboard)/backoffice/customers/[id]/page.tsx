@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -13,12 +13,15 @@ import { useAuthStore } from '@/store/auth';
 import { UserRole } from '@/types';
 import { ROUTES } from '@/constants';
 import StatusBadge from '@/components/backoffice/StatusBadge';
+import { toast } from 'react-hot-toast';
 
 const PAGE_SIZE = 10;
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const backQuery = searchParams.get('back') ?? '';
+  const backHref = `${ROUTES.BACKOFFICE_CUSTOMERS}${backQuery}`;
   const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
   const canMutate = userRole >= UserRole.Owner;
 
@@ -71,8 +74,10 @@ export default function CustomerDetailPage() {
     try {
       await backofficeService.updateCustomerStatus(id, !isActive);
       setIsActive((prev) => !prev);
+      toast.success(`Customer ${isActive ? 'deactivated' : 'activated'} successfully.`);
     } catch {
       setError('Failed to update customer status.');
+      toast.error('Failed to update customer status.');
     } finally {
       setToggling(false);
     }
@@ -83,7 +88,7 @@ export default function CustomerDetailPage() {
       {/* Back */}
       <div className="flex items-center gap-3">
         <Link
-          href={ROUTES.BACKOFFICE_CUSTOMERS}
+          href={backHref}
           className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
         >
           <ArrowLeftIcon className="h-4 w-4" />

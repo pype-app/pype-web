@@ -70,6 +70,7 @@ const navigation: NavigationItem[] = [
       { name: 'Overview', href: ROUTES.BACKOFFICE_DASHBOARD, icon: ChartBarIcon },
       { name: 'Customers', href: ROUTES.BACKOFFICE_CUSTOMERS, icon: UsersIcon },
       { name: 'Tenants', href: ROUTES.BACKOFFICE_TENANTS, icon: BuildingOffice2Icon },
+      { name: 'Users', href: ROUTES.BACKOFFICE_USERS, icon: EyeIcon },
     ],
   },
 ];

@@ -57,6 +57,7 @@ export const ROUTES = {
   BACKOFFICE_CUSTOMER_DETAIL: (id: string) => `/dashboard/backoffice/customers/${id}` as const,
   BACKOFFICE_TENANTS: '/dashboard/backoffice/tenants',
   BACKOFFICE_TENANT_DETAIL: (id: string) => `/dashboard/backoffice/tenants/${id}` as const,
+  BACKOFFICE_USERS: '/dashboard/backoffice/users',
 } as const;
 
 /**

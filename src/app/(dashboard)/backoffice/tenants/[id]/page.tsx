@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -19,25 +19,53 @@ import { useAuthStore } from '@/store/auth';
 import { UserRole } from '@/types';
 import { ROUTES } from '@/constants';
 import StatusBadge from '@/components/backoffice/StatusBadge';
+import { toast } from 'react-hot-toast';
 
 type Tab = 'events' | 'users';
+type StatusFilter = 'active' | 'inactive';
 
-const ROLE_LABELS = ['Viewer', 'User', 'Admin', 'Owner'];
+function toStatusFilter(value: string): StatusFilter | undefined {
+  return value === 'active' || value === 'inactive' ? value : undefined;
+}
 
 export default function TenantDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const backQuery = searchParams.get('back') ?? '';
+  const backHref = `${ROUTES.BACKOFFICE_TENANTS}${backQuery}`;
   const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
   const canMutate = userRole >= UserRole.Owner;
 
+  const initialTab = searchParams.get('tab') === 'users' ? 'users' : 'events';
+  const initialUsersPage = Number(searchParams.get('usersPage') ?? '1') || 1;
+  const initialRoleFilter = searchParams.get('role') ?? '';
+  const initialStatusFilter = searchParams.get('status') ?? '';
+
   const [tenant, setTenant] = useState<BackofficeTenant | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('events');
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [events, setEvents] = useState<TenantEvent[]>([]);
   const [usersData, setUsersData] = useState<PaginatedResponse<BackofficeUser> | null>(null);
-  const [usersPage, setUsersPage] = useState(1);
+  const [usersPage, setUsersPage] = useState(initialUsersPage);
+  const [roleFilter, setRoleFilter] = useState(initialRoleFilter);
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toggling, setToggling] = useState(false);
   const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (backQuery) params.set('back', backQuery);
+    if (activeTab !== 'events') params.set('tab', activeTab);
+    if (activeTab === 'users') {
+      if (usersPage > 1) params.set('usersPage', String(usersPage));
+      if (roleFilter) params.set('role', roleFilter);
+      if (statusFilter) params.set('status', statusFilter);
+    }
+    const query = params.toString();
+    router.replace(query ? `?${query}` : '?', { scroll: false });
+  }, [activeTab, usersPage, roleFilter, statusFilter, router, backQuery]);
 
   // Load tenant metadata from tenants list
   useEffect(() => {
@@ -70,6 +98,8 @@ export default function TenantDetailPage() {
       const data = await backofficeService.listTenantUsers(id, {
         page: usersPage,
         pageSize: 10,
+        role: roleFilter || undefined,
+        status: toStatusFilter(statusFilter),
       });
       setUsersData(data);
     } catch {
@@ -77,7 +107,7 @@ export default function TenantDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [id, usersPage]);
+  }, [id, usersPage, roleFilter, statusFilter]);
 
   useEffect(() => {
     if (activeTab === 'events') loadEvents();
@@ -90,8 +120,10 @@ export default function TenantDetailPage() {
     try {
       await backofficeService.updateTenantStatus(id, !tenant.isActive);
       setTenant((prev) => (prev ? { ...prev, isActive: !prev.isActive } : prev));
+      toast.success(`Tenant ${tenant.isActive ? 'deactivated' : 'activated'} successfully.`);
     } catch {
       setError('Failed to update tenant status.');
+      toast.error('Failed to update tenant status.');
     } finally {
       setToggling(false);
     }
@@ -112,8 +144,10 @@ export default function TenantDetailPage() {
             }
           : prev
       );
+      toast.success(`User ${user.isActive ? 'deactivated' : 'activated'} successfully.`);
     } catch {
       setError('Failed to update user status.');
+      toast.error('Failed to update user status.');
     } finally {
       setTogglingUserId(null);
     }
@@ -128,7 +162,7 @@ export default function TenantDetailPage() {
     <div className="space-y-6">
       {/* Back */}
       <Link
-        href={ROUTES.BACKOFFICE_TENANTS}
+        href={backHref}
         className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
       >
         <ArrowLeftIcon className="h-4 w-4" />
@@ -226,6 +260,16 @@ export default function TenantDetailPage() {
           onToggleUser={handleToggleUserStatus}
           page={usersPage}
           onPageChange={setUsersPage}
+          roleFilter={roleFilter}
+          statusFilter={statusFilter}
+          onRoleFilterChange={(value) => {
+            setRoleFilter(value);
+            setUsersPage(1);
+          }}
+          onStatusFilterChange={(value) => {
+            setStatusFilter(value);
+            setUsersPage(1);
+          }}
         />
       )}
     </div>
@@ -284,6 +328,10 @@ function UsersTab({
   onToggleUser,
   page,
   onPageChange,
+  roleFilter,
+  statusFilter,
+  onRoleFilterChange,
+  onStatusFilterChange,
 }: {
   usersData: PaginatedResponse<BackofficeUser> | null;
   loading: boolean;
@@ -292,6 +340,10 @@ function UsersTab({
   onToggleUser: (user: BackofficeUser) => void;
   page: number;
   onPageChange: (p: number) => void;
+  roleFilter: string;
+  statusFilter: string;
+  onRoleFilterChange: (value: string) => void;
+  onStatusFilterChange: (value: string) => void;
 }) {
   const ROLE_LABELS = ['Viewer', 'User', 'Admin', 'Owner'];
 
@@ -315,6 +367,39 @@ function UsersTab({
 
   return (
     <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+            Role
+          </label>
+          <select
+            value={roleFilter}
+            onChange={(event) => onRoleFilterChange(event.target.value)}
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+          >
+            <option value="">All roles</option>
+            <option value="Viewer">Viewer</option>
+            <option value="User">User</option>
+            <option value="Admin">Admin</option>
+            <option value="Owner">Owner</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+            Status
+          </label>
+          <select
+            value={statusFilter}
+            onChange={(event) => onStatusFilterChange(event.target.value)}
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+          >
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+
       <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800/50">
