@@ -137,9 +137,25 @@ class ApiClient {
           }
         }
 
-        const original = error.config;
+        const original = error.config as (PypeAxiosRequestConfig & { _retry?: boolean; url?: string }) | undefined;
+        const requestUrl = original?.url ?? '';
 
-        if (error.response?.status === 401 && !original._retry && original.url !== '/api/auth/refresh') {
+        // Login/registration endpoints can legitimately return 401/400 and must not trigger session-expired redirect.
+        const isAuthFlowEndpoint =
+          requestUrl.includes('/api/auth/login')
+          || requestUrl.includes('/api/auth/register')
+          || requestUrl.includes('/api/auth/register-user')
+          || requestUrl.includes('/api/auth/forgot-password')
+          || requestUrl.includes('/api/auth/reset-password')
+          || requestUrl.includes('/api/auth/confirm-email')
+          || requestUrl.includes('/api/auth/refresh');
+
+        if (
+          error.response?.status === 401
+          && original
+          && !original._retry
+          && !isAuthFlowEndpoint
+        ) {
           original._retry = true;
 
           try {
