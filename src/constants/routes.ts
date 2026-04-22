@@ -49,6 +49,14 @@ export const ROUTES = {
 
   /** Profile routes */
   PROFILE: '/dashboard/profile',
+
+  /** Backoffice routes (Admin/Owner only) */
+  BACKOFFICE: '/dashboard/backoffice',
+  BACKOFFICE_DASHBOARD: '/dashboard/backoffice/dashboard',
+  BACKOFFICE_CUSTOMERS: '/dashboard/backoffice/customers',
+  BACKOFFICE_CUSTOMER_DETAIL: (id: string) => `/dashboard/backoffice/customers/${id}` as const,
+  BACKOFFICE_TENANTS: '/dashboard/backoffice/tenants',
+  BACKOFFICE_TENANT_DETAIL: (id: string) => `/dashboard/backoffice/tenants/${id}` as const,
 } as const;
 
 /**
