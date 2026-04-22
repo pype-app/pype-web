@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
-import { UserRole } from '@/types';
 import { ROUTES } from '@/constants';
 import {
   ChartBarIcon,
@@ -27,15 +26,15 @@ function classNames(...classes: string[]) {
 export default function BackofficeLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
+  const hasPlatformAccess = useAuthStore((state) => state.user?.platformAccess ?? false);
 
   useEffect(() => {
-    if (userRole < UserRole.Admin) {
+    if (!hasPlatformAccess) {
       router.replace(ROUTES.DASHBOARD);
     }
-  }, [userRole, router]);
+  }, [hasPlatformAccess, router]);
 
-  if (userRole < UserRole.Admin) {
+  if (!hasPlatformAccess) {
     return null;
   }
 

@@ -11,6 +11,7 @@ export interface BackofficeCustomer {
   plan: number;
   tenantCount: number;
   userCount: number;
+  pipelineCount: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -24,12 +25,17 @@ export interface BackofficeTenant {
   plan: number;
   userCount: number;
   pipelineCount: number;
+  ownerName?: string;
+  ownerEmail?: string;
   createdAt: string;
   updatedAt?: string;
 }
 
 export interface BackofficeUser {
   id: string;
+  tenantId: string;
+  tenantName: string;
+  tenantSubdomain?: string;
   email: string;
   firstName?: string;
   lastName?: string;
@@ -48,6 +54,23 @@ export interface TenantEvent {
   description: string;
   performedBy: string;
   timestamp: string;
+}
+
+export interface BackofficeTenantPipeline {
+  id: string;
+  tenantId: string;
+  name: string;
+  description?: string;
+  version: string;
+  isActive: boolean;
+  yamlDefinition: string;
+  createdAt: string;
+  updatedAt?: string;
+  lastExecutionAt?: string;
+  lastExecutionStatus?: string;
+  lastFailedAt?: string;
+  lastErrorMessage?: string;
+  failedExecutionsLast7Days: number;
 }
 
 export interface KpiTrendPoint {

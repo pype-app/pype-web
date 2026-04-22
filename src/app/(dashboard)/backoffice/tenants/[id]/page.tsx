@@ -11,17 +11,18 @@ import {
 import { backofficeService } from '@/services/backofficeService';
 import {
   BackofficeTenant,
+  BackofficeTenantPipeline,
   BackofficeUser,
   TenantEvent,
   PaginatedResponse,
 } from '@/types/backoffice';
 import { useAuthStore } from '@/store/auth';
-import { UserRole } from '@/types';
+import { PlatformRole } from '@/types';
 import { ROUTES } from '@/constants';
 import StatusBadge from '@/components/backoffice/StatusBadge';
 import { toast } from 'react-hot-toast';
 
-type Tab = 'events' | 'users';
+type Tab = 'events' | 'users' | 'pipelines';
 type StatusFilter = 'active' | 'inactive';
 
 function toStatusFilter(value: string): StatusFilter | undefined {
@@ -34,8 +35,9 @@ export default function TenantDetailPage() {
   const searchParams = useSearchParams();
   const backQuery = searchParams.get('back') ?? '';
   const backHref = `${ROUTES.BACKOFFICE_TENANTS}${backQuery}`;
-  const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
-  const canMutate = userRole >= UserRole.Owner;
+  const platformRole = useAuthStore((state) => state.user?.platformRole ?? null);
+  const canMutate = platformRole === PlatformRole.BackofficeOperator
+    || platformRole === PlatformRole.BackofficeAdmin;
 
   const initialTab = searchParams.get('tab') === 'users' ? 'users' : 'events';
   const initialUsersPage = Number(searchParams.get('usersPage') ?? '1') || 1;
@@ -45,6 +47,7 @@ export default function TenantDetailPage() {
   const [tenant, setTenant] = useState<BackofficeTenant | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [events, setEvents] = useState<TenantEvent[]>([]);
+  const [pipelines, setPipelines] = useState<BackofficeTenantPipeline[]>([]);
   const [usersData, setUsersData] = useState<PaginatedResponse<BackofficeUser> | null>(null);
   const [usersPage, setUsersPage] = useState(initialUsersPage);
   const [roleFilter, setRoleFilter] = useState(initialRoleFilter);
@@ -109,10 +112,24 @@ export default function TenantDetailPage() {
     }
   }, [id, usersPage, roleFilter, statusFilter]);
 
+  const loadPipelines = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await backofficeService.getTenantPipelines(id);
+      setPipelines(data);
+    } catch {
+      setError('Failed to load tenant pipelines.');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     if (activeTab === 'events') loadEvents();
-    else loadUsers();
-  }, [activeTab, loadEvents, loadUsers]);
+    else if (activeTab === 'users') loadUsers();
+    else loadPipelines();
+  }, [activeTab, loadEvents, loadUsers, loadPipelines]);
 
   const handleToggleTenantStatus = async () => {
     if (!canMutate || !tenant) return;
@@ -156,6 +173,7 @@ export default function TenantDetailPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'events', label: 'Recent Events' },
     { key: 'users', label: 'Users' },
+    { key: 'pipelines', label: 'Pipelines' },
   ];
 
   return (
@@ -202,6 +220,7 @@ export default function TenantDetailPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
             { label: 'Plan', value: ['Free', 'Pro', 'Enterprise'][tenant.plan] ?? tenant.plan },
+            { label: 'Owner', value: tenant.ownerEmail ?? '—' },
             { label: 'Users', value: tenant.userCount },
             { label: 'Pipelines', value: tenant.pipelineCount },
             {
@@ -271,6 +290,10 @@ export default function TenantDetailPage() {
             setUsersPage(1);
           }}
         />
+      )}
+
+      {activeTab === 'pipelines' && (
+        <PipelinesTab pipelines={pipelines} loading={loading} />
       )}
     </div>
   );
@@ -375,7 +398,7 @@ function UsersTab({
           <select
             value={roleFilter}
             onChange={(event) => onRoleFilterChange(event.target.value)}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
           >
             <option value="">All roles</option>
             <option value="Viewer">Viewer</option>
@@ -391,7 +414,7 @@ function UsersTab({
           <select
             value={statusFilter}
             onChange={(event) => onStatusFilterChange(event.target.value)}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
           >
             <option value="">All statuses</option>
             <option value="active">Active</option>
@@ -406,6 +429,9 @@ function UsersTab({
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 User
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Tenant
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Role
@@ -430,6 +456,12 @@ function UsersTab({
                         : '—'}
                     </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500">{user.email}</p>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div>
+                    <p className="text-sm text-gray-700 dark:text-gray-200">{user.tenantName}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{user.tenantSubdomain ?? '—'}</p>
                   </div>
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
@@ -490,6 +522,74 @@ function UsersTab({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function PipelinesTab({ pipelines, loading }: { pipelines: BackofficeTenantPipeline[]; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-24 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (pipelines.length === 0) {
+    return (
+      <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">
+        No pipelines found for this tenant.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {pipelines.map((pipeline) => (
+        <div
+          key={pipeline.id}
+          className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
+        >
+          <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{pipeline.name}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Version {pipeline.version} · {pipeline.isActive ? 'Active' : 'Inactive'}
+              </p>
+              {pipeline.description && (
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{pipeline.description}</p>
+              )}
+            </div>
+
+            <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400 sm:text-right">
+              <p>Last execution: {pipeline.lastExecutionAt ? new Date(pipeline.lastExecutionAt).toLocaleString() : '—'}</p>
+              <p>Status: {pipeline.lastExecutionStatus ?? 'No executions'}</p>
+              <p>Failed runs (7d): {pipeline.failedExecutionsLast7Days}</p>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">YAML Definition</p>
+              <pre className="overflow-x-auto rounded-md bg-gray-50 dark:bg-gray-900/60 p-3 text-xs text-gray-800 dark:text-gray-200">{pipeline.yamlDefinition}</pre>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Latest Failure</p>
+              {pipeline.lastErrorMessage ? (
+                <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">
+                  <p className="font-medium">{pipeline.lastFailedAt ? new Date(pipeline.lastFailedAt).toLocaleString() : 'Unknown time'}</p>
+                  <p className="mt-1 whitespace-pre-wrap">{pipeline.lastErrorMessage}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No execution failures recorded.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

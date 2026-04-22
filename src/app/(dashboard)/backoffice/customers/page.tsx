@@ -13,7 +13,7 @@ import { toast } from 'react-hot-toast';
 import { backofficeService } from '@/services/backofficeService';
 import { BackofficeCustomer } from '@/types/backoffice';
 import { useAuthStore } from '@/store/auth';
-import { UserRole } from '@/types';
+import { PlatformRole } from '@/types';
 import { ROUTES } from '@/constants';
 import StatusBadge from '@/components/backoffice/StatusBadge';
 
@@ -22,8 +22,9 @@ const PAGE_SIZE = 25;
 export default function BackofficeCustomersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
-  const canMutate = userRole >= UserRole.Owner;
+  const platformRole = useAuthStore((state) => state.user?.platformRole ?? null);
+  const canMutate = platformRole === PlatformRole.BackofficeOperator
+    || platformRole === PlatformRole.BackofficeAdmin;
 
   const initialPage = Number(searchParams.get('page') ?? '1') || 1;
   const initialStatus = (searchParams.get('status') as 'all' | 'active' | 'inactive' | null) ?? 'all';

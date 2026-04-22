@@ -13,7 +13,7 @@ import { toast } from 'react-hot-toast';
 import { backofficeService } from '@/services/backofficeService';
 import { BackofficeTenant } from '@/types/backoffice';
 import { useAuthStore } from '@/store/auth';
-import { UserRole } from '@/types';
+import { PlatformRole } from '@/types';
 import { ROUTES } from '@/constants';
 import StatusBadge from '@/components/backoffice/StatusBadge';
 
@@ -22,8 +22,9 @@ const PAGE_SIZE = 25;
 export default function BackofficeTenantsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
-  const canMutate = userRole >= UserRole.Owner;
+  const platformRole = useAuthStore((state) => state.user?.platformRole ?? null);
+  const canMutate = platformRole === PlatformRole.BackofficeOperator
+    || platformRole === PlatformRole.BackofficeAdmin;
 
   const initialPage = Number(searchParams.get('page') ?? '1') || 1;
   const initialStatus = (searchParams.get('status') as 'all' | 'active' | 'inactive' | null) ?? 'all';
@@ -169,6 +170,9 @@ export default function BackofficeTenantsPage() {
                 Plan
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Owner
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Users
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -187,7 +191,7 @@ export default function BackofficeTenantsPage() {
             {loading ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i}>
-                  {[...Array(7)].map((_, j) => (
+                  {[...Array(8)].map((_, j) => (
                     <td key={j} className="px-4 py-3">
                       <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse" />
                     </td>
@@ -196,7 +200,7 @@ export default function BackofficeTenantsPage() {
               ))
             ) : tenants.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
                   No tenants found.
                 </td>
               </tr>
@@ -216,6 +220,12 @@ export default function BackofficeTenantsPage() {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                     {['Free', 'Pro', 'Enterprise'][tenant.plan] ?? tenant.plan}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div>
+                      <p className="text-sm text-gray-700 dark:text-gray-200">{tenant.ownerName || '—'}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{tenant.ownerEmail || 'No owner assigned'}</p>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                     {tenant.userCount}

@@ -32,6 +32,7 @@ interface NavigationItem {
   icon: React.ElementType;
   children?: NavigationItem[];
   minRole?: UserRole;
+  requiresPlatformAccess?: boolean;
 }
 
 const navigation: NavigationItem[] = [
@@ -65,7 +66,7 @@ const navigation: NavigationItem[] = [
   {
     name: 'Backoffice',
     icon: BuildingOffice2Icon,
-    minRole: UserRole.Admin,
+    requiresPlatformAccess: true,
     children: [
       { name: 'Overview', href: ROUTES.BACKOFFICE_DASHBOARD, icon: ChartBarIcon },
       { name: 'Customers', href: ROUTES.BACKOFFICE_CUSTOMERS, icon: UsersIcon },
@@ -88,10 +89,19 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
+  const hasPlatformAccess = useAuthStore((state) => state.user?.platformAccess ?? false);
+  const isBackofficeContext = pathname.startsWith(ROUTES.BACKOFFICE);
 
-  const visibleNavigation = navigation.filter(
-    (item) => item.minRole === undefined || userRole >= item.minRole
-  );
+  const visibleNavigation = navigation.filter((item) => {
+    const isVisibleForRole = item.minRole === undefined || userRole >= item.minRole;
+    const isVisibleForPlatform = !item.requiresPlatformAccess || hasPlatformAccess;
+
+    if (isBackofficeContext) {
+      return item.requiresPlatformAccess && isVisibleForPlatform;
+    }
+
+    return isVisibleForRole && isVisibleForPlatform && !item.requiresPlatformAccess;
+  });
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => 
@@ -119,7 +129,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
         setExpandedItems(prev => [...prev, item.name]);
       }
     });
-  }, [pathname]);
+  }, [pathname, visibleNavigation, expandedItems]);
 
   const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 pb-4">

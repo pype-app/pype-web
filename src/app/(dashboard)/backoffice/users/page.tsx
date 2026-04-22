@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { backofficeService } from '@/services/backofficeService';
 import { BackofficeTenant, BackofficeUser, PaginatedResponse } from '@/types/backoffice';
 import { useAuthStore } from '@/store/auth';
-import { UserRole } from '@/types';
+import { PlatformRole } from '@/types';
 import StatusBadge from '@/components/backoffice/StatusBadge';
 
 const PAGE_SIZE = 15;
@@ -27,8 +27,9 @@ export default function BackofficeUsersPage() {
   const tenantId = (searchParams.get('tenantId') ?? '').trim();
   const page = Number(searchParams.get('page') ?? '1') || 1;
 
-  const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
-  const canMutate = userRole >= UserRole.Owner;
+  const platformRole = useAuthStore((state) => state.user?.platformRole ?? null);
+  const canMutate = platformRole === PlatformRole.BackofficeOperator
+    || platformRole === PlatformRole.BackofficeAdmin;
 
   const [tenants, setTenants] = useState<BackofficeTenant[]>([]);
   const [usersData, setUsersData] = useState<PaginatedResponse<BackofficeUser> | null>(null);
@@ -163,7 +164,7 @@ export default function BackofficeUsersPage() {
               value={tenantId}
               onChange={(e) => onTenantChange(e.target.value)}
               disabled={loadingTenants}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
             >
               {!tenantId && <option value="">Select a tenant</option>}
               {tenants.map((tenant) => (
@@ -181,7 +182,7 @@ export default function BackofficeUsersPage() {
             <select
               value={role}
               onChange={(e) => onRoleChange(e.target.value)}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
             >
               <option value="">All roles</option>
               <option value="Viewer">Viewer</option>
@@ -198,7 +199,7 @@ export default function BackofficeUsersPage() {
             <select
               value={status}
               onChange={(e) => onStatusChange(e.target.value)}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
             >
               <option value="">All statuses</option>
               <option value="active">Active</option>
@@ -229,6 +230,9 @@ export default function BackofficeUsersPage() {
                 User
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Tenant
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Role
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -245,7 +249,7 @@ export default function BackofficeUsersPage() {
             {loadingUsers ? (
               [...Array(5)].map((_, index) => (
                 <tr key={index}>
-                  {[...Array(canMutate ? 5 : 4)].map((__, cellIndex) => (
+                  {[...Array(canMutate ? 6 : 5)].map((__, cellIndex) => (
                     <td key={cellIndex} className="px-4 py-3">
                       <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse" />
                     </td>
@@ -255,7 +259,7 @@ export default function BackofficeUsersPage() {
             ) : !usersData || usersData.items.length === 0 ? (
               <tr>
                 <td
-                  colSpan={canMutate ? 5 : 4}
+                  colSpan={canMutate ? 6 : 5}
                   className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500"
                 >
                   No users found.
@@ -272,6 +276,12 @@ export default function BackofficeUsersPage() {
                           : '—'}
                       </p>
                       <p className="text-xs text-gray-400 dark:text-gray-500">{user.email}</p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div>
+                      <p className="text-sm text-gray-700 dark:text-gray-200">{user.tenantName}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{user.tenantSubdomain ?? '—'}</p>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">

@@ -4,11 +4,19 @@ export interface User {
   firstName?: string;
   lastName?: string;
   role: UserRole;
+  platformAccess?: boolean;
+  platformRole?: PlatformRole | null;
   emailConfirmed: boolean;
   lastLoginAt?: string;
   createdAt: string;
   profileImageData?: string;
   tenant: Tenant;
+}
+
+export enum PlatformRole {
+  BackofficeViewer = 'BackofficeViewer',
+  BackofficeOperator = 'BackofficeOperator',
+  BackofficeAdmin = 'BackofficeAdmin',
 }
 
 export enum UserRole {

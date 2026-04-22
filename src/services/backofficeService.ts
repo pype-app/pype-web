@@ -4,6 +4,7 @@ import {
   BackofficeCustomer,
   BackofficeTenant,
   BackofficeUser,
+  BackofficeTenantPipeline,
   TenantEvent,
   PaginatedResponse,
   ListCustomersQuery,
@@ -70,6 +71,10 @@ class BackofficeService {
     return apiClient.get<TenantEvent[]>(
       `${BASE}/tenants/${tenantId}/events?limit=${limit}`
     );
+  }
+
+  async getTenantPipelines(tenantId: string): Promise<BackofficeTenantPipeline[]> {
+    return apiClient.get<BackofficeTenantPipeline[]>(`${BASE}/tenants/${tenantId}/pipelines`);
   }
 
   async updateCustomerStatus(customerId: string, isActive: boolean): Promise<void> {

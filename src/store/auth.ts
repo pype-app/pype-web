@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User, Tenant, AuthResponse, LoginRequest, RegisterRequest, UserRole } from '@/types';
+import { User, Tenant, AuthResponse, LoginRequest, RegisterRequest, UserRole, PlatformRole } from '@/types';
 import apiClient from '@/lib/api-client';
 
 // Helper to parse role from API (string) to UserRole enum (number)
@@ -19,9 +19,15 @@ function parseRole(role: any): UserRole {
 
 // Normalize user response from API
 function normalizeUser(user: any): User {
+  const parsedPlatformRole = typeof user?.platformRole === 'string'
+    ? (user.platformRole as PlatformRole)
+    : null;
+
   return {
     ...user,
     role: parseRole(user.role),
+    platformAccess: Boolean(user?.platformAccess),
+    platformRole: parsedPlatformRole,
   };
 }
 

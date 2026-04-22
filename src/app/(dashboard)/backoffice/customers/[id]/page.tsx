@@ -10,7 +10,7 @@ import {
 import { backofficeService } from '@/services/backofficeService';
 import { BackofficeCustomer, BackofficeUser, PaginatedResponse } from '@/types/backoffice';
 import { useAuthStore } from '@/store/auth';
-import { UserRole } from '@/types';
+import { PlatformRole } from '@/types';
 import { ROUTES } from '@/constants';
 import StatusBadge from '@/components/backoffice/StatusBadge';
 import { toast } from 'react-hot-toast';
@@ -22,8 +22,9 @@ export default function CustomerDetailPage() {
   const searchParams = useSearchParams();
   const backQuery = searchParams.get('back') ?? '';
   const backHref = `${ROUTES.BACKOFFICE_CUSTOMERS}${backQuery}`;
-  const userRole = useAuthStore((state) => state.user?.role ?? UserRole.Viewer);
-  const canMutate = userRole >= UserRole.Owner;
+  const platformRole = useAuthStore((state) => state.user?.platformRole ?? null);
+  const canMutate = platformRole === PlatformRole.BackofficeOperator
+    || platformRole === PlatformRole.BackofficeAdmin;
 
   // The backend uses Tenant as the underlying entity for "customers"
   // Users are listed via /tenants/{id}/users
